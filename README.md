@@ -1,6 +1,6 @@
 ![MGSIM](https://github.com/nick-youngblut/MGSIM/workflows/MGSIM/badge.svg)
 
-MGSIM
+aMGSIM
 =====
 
 Metagenome read simulation of multiple synthetic communities
