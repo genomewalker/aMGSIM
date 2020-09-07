@@ -1,11 +1,11 @@
-![MGSIM](https://github.com/nick-youngblut/MGSIM/workflows/MGSIM/badge.svg)
+![MGSIM](https://github.com/genomewalker/aMGSIM/workflows/aMGSIM/badge.svg)
 
 aMGSIM
 =====
 
-Metagenome read simulation of multiple synthetic communities
+This is an extension of [MGSIM](https://github.com/nick-youngblut/MGSIM/) to create ancient metagenome read simulation of multiple synthetic communities. It integrates the methods in [Gargammel](https://github.com/grenaud/gargammel) and provides flexibility to create different experimental scenarios.
 
-#### Sections
+## Sections
 
 - [REFERENCE](#reference)
 - [INSTALLATION](#installation)
@@ -16,6 +16,7 @@ Metagenome read simulation of multiple synthetic communities
 
 
 # REFERENCE
+Please cite the original [MGSIM](https://github.com/nick-youngblut/MGSIM/)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3696891.svg)](https://doi.org/10.5281/zenodo.3696891)
 
@@ -24,34 +25,23 @@ Metagenome read simulation of multiple synthetic communities
 
 ## Dependencies
 
-See the `conda install` line in the [CI yaml](.github/workflows/pythonpackage.yml)
+aMGSIM depends on the binaries included in Gargammel. You can install it as:
+
+`conda install -c bioconda gargammel`
 
 ## Install
 
-### via pip
+#### via pip
 
 `pip install MGSIM`
 
-### via `setup.py`
+#### via `setup.py`
 
 `python setpy.py install`
 
-## Testing
-
-* conda-forge::pytest
-
-In the MGSIM base directory, use the command `pytest` to
-run all of the tests.
-
-To run tests on a particular test file:
-
-`pytest -s --script-launch-mode=subprocess  path/to/the/test/file`
-
-Example:
-
-`pytest -s --script-launch-mode=subprocess ./tests/test_Reads.py`
-
 # HOW-TO
+
+aMGSIM inetgrates all the programs from MGSIM, check the documentation of MGSIM for more details
 
 See all subcommands:
 
