@@ -32,7 +32,7 @@ jobs:
       shell: bash -l {0}
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-dependency pytest-console-scripts
+        pip install pytest pytest-dependency pytest-console-scripts MGSIM
         python setup.py install
     - name: Test with pytest
       shell: bash -l {0}
