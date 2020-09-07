@@ -26,7 +26,7 @@ install_reqs = [
 desc = 'Anciengt metagenome simulation of multiple synthetic communities'
 setup(
     name = 'aMGSIM',
-    version = '0.0.1',
+    version = '0.1',
     description = desc,
     long_description = desc + '\n See README for more information.',
     author = 'Antonio Fernandez-Guerra',
