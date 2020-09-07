@@ -1,0 +1,7 @@
+name: aMGSIM
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - art
