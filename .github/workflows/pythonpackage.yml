@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.6, 3.7]
     steps:
     - uses: goanpeca/setup-miniconda@v1
       with:
@@ -32,7 +32,7 @@ jobs:
       shell: bash -l {0}
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-dependency pytest-console-scripts MGSIM
+        pip install pytest pytest-dependency pytest-console-scripts MGSIM dataclasses
         python setup.py install
     - name: Test with pytest
       shell: bash -l {0}
