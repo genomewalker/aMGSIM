@@ -31,7 +31,7 @@ Description:
     * directory structure: OUTPUT_DIR/COMMUNITY/ancient-read_files
     * read sequences are named by the taxon they originate from
 """
-
+# %%
 # import
 # batteries
 from docopt import docopt
@@ -52,27 +52,61 @@ import datetime
 import tqdm
 import os
 from biolib.external.prodigal import Prodigal
-# from biolib.external.execute import check_on_path
-#import biolib
+import Bio.Data.CodonTable
+from itertools import product
+import json
 
-# Per sample generate all necessary to recreate ancient genomes
+# Codon functions
 
-# {
-#     'comm': {
-#         'name': 'com1',
-#         'Taxon': {
-#             'name': 'name1',
-#             'fragments': {
-#                 'length': [10 20 30 40 60],
-#                 'freq': [0.1 0.4 0.3 0.1 0.1]
-#             },
-#             'onlyAncient': False
-#         }
+# codons = Bio.Data.CodonTable.standard_dna_table.forward_table
+# codons_stop = Bio.Data.CodonTable.standard_dna_table.stop_codons
+# codons_stop = {el: '*' for el in codons_stop}
+# codons = {**codons, **codons_stop}
+
+# # Get codons that can get damaged
+# # C -> T
+
+# filtered_dict = {k: v for (k, v) in codons.items() if "C" in k}
+# codon_list = (list(filtered_dict.keys()))
+
+# d = {
+#     "A": "A",
+#     "T": "T",
+#     "G": "G",
+#     "C": ["T", "C"],
 #     }
-# }
+
+# d_rev = {
+#     "T": "T",
+#     "C": "C",
+#     "A": "A",
+#     "G": ["G", "A"],
+#     }
+
+# codons_damage = {}
+# for k in codon_list:
+#     c_list = list(map("".join, product(*map(d.get, k))))
+#     c_list.remove(str(k))
+#     codons_damage[k] = {"aa": codons[str(k)],
+#                         "mods": {el: codons[str(el)] for el in c_list}
+#                         }
 
 
-def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.excepthook):
+# # A -> G
+# filtered_dict_rev = {k: v for (k, v) in codons.items() if "G" in k}
+# codon_list_rev = (list(filtered_dict_rev.keys()))
+# codons_damage_rev = {}
+# for k in codon_list_rev:
+#     c_list = list(map("".join, product(*map(d_rev.get, k))))
+#     c_list.remove(str(k))
+#     codons_damage_rev[k] = {"aa": codons[str(k)],
+#                             "mods": {el: codons[str(el)] for el in c_list}
+#                             }
+# print(json.dumps(codons_damage_rev, indent=4))
+
+
+debug = None
+def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.__excepthook__):
     '''Print user friendly error messages normally, full traceback if DEBUG on.
        Adapted from http://stackoverflow.com/questions/27674602/hide-traceback-unless-a-debug-flag-is-set
     '''
@@ -82,9 +116,8 @@ def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.except
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
-
-sys.excepthook = exceptionHandler
 
 
 # logging
@@ -444,20 +477,22 @@ def rand_isAncient(row):
 #     prodigal = Prodigal(cpus=cpus, verbose = verbose)
 #     genes = prodigal.run(
 #         genome_files=genome,
-#         output_dir=output_dir, 
-#         called_genes=False, 
-#         translation_table=None, 
+#         output_dir=output_dir,
+#         called_genes=False,
+#         translation_table=None,
 #         meta=False,
 #         closed_ends=False)
 #     return(genes)
 
-def main(args):
-    # simulating reads
-    global debug
-    debug = False
 
+def main(args):
+    global debug
     if args['--debug']:
         debug = True
+    else:
+        debug = None
+    
+    sys.excepthook = exceptionHandler
 
     # simulating reads
     args = f.validate_schema(args, d.schema_init_ag, debug)
@@ -589,12 +624,12 @@ def main(args):
     #         tqdm.tqdm(p.imap_unordered(func, genomes), total=len(genomes)))
     #     # ancient_genomes_data = p.map(func, genomes)
 
-    prodigal = Prodigal(cpus = nproc, verbose = False)
+    prodigal = Prodigal(cpus=nproc, verbose=False)
     genes = prodigal.run(
         genome_files=set(df.Fasta.values),
-        output_dir=output_dir, 
-        called_genes=False, 
-        translation_table=None, 
+        output_dir=output_dir,
+        called_genes=False,
+        translation_table=None,
         meta=False,
         closed_ends=False)
     print(genes)
@@ -653,3 +688,5 @@ def opt_parse(args=None):
     else:
         args = docopt(__doc__, version='0.1', argv=args)
     main(args)
+
+# %%

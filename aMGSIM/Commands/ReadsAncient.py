@@ -81,9 +81,12 @@ from Bio import SeqIO
 import itertools
 import gzip
 from mimetypes import guess_type
+from biolib.external.prodigal import Prodigal
 
 
-def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.excepthook):
+
+debug = None
+def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.__excepthook__):
     '''Print user friendly error messages normally, full traceback if DEBUG on.
        Adapted from http://stackoverflow.com/questions/27674602/hide-traceback-unless-a-debug-flag-is-set
     '''
@@ -93,8 +96,8 @@ def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.except
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
-sys.excepthook = exceptionHandler
 
 
 # logging
@@ -664,33 +667,29 @@ def combine_fastx_files(x, output_dir, ancient_files, modern_files, exp_data):
                                      data_ancient=data_ancient,
                                      output_dir=output_dir,
                                      comm=comm)
-    # art_R2_files = _combine_fastq_types(file_type='art_ofile_r2',
-    #                                     suffix='art',
-    #                                     data_modern=data_modern,
-    #                                     data_ancient=data_ancient,
-    #                                     output_dir=output_dir,
-    #                                     comm=x)
-    # fragSim_files = _combine_fasta_types(file_type='fragSim_ofile',
-    #                                      suffix='fragSim',
-    #                                      data_modern=data_modern,
-    #                                      data_ancient=data_ancient,
-    #                                      output_dir=output_dir,
-    #                                      comm=x)
-    # deamSim_files = _combine_fasta_types(file_type='deamSim_ofile',
-    #                                      suffix='deamSim',
-    #                                      data_modern=data_modern,
-    #                                      data_ancient=data_ancient,
-    #                                      output_dir=output_dir,
-    #                                      comm=x)
     return files
 
+def predict_genes(x, cpus, output_dir, called_genes=False, translation_table=None, meta=False, closed_ends=False, verbose = True):
+    genome = [x[4]]
+    prodigal = Prodigal(cpus=cpus, verbose = verbose)
+    genes = prodigal.run(
+        genome_files=genome,
+        output_dir=output_dir,
+        called_genes=False,
+        translation_table=None,
+        meta=False,
+        closed_ends=False)
+    return(genes)
 
 def main(args):
+    
     global debug
-    debug = False
-
     if args['--debug']:
         debug = True
+    else:
+        debug = None
+    
+    sys.excepthook = exceptionHandler
 
     # simulating reads
     args = f.validate_schema(args, d.schema_init_ar, debug)
@@ -774,9 +773,9 @@ def main(args):
         p = Pool(config_params['cpus'])
         files = list(tqdm.tqdm(p.imap_unordered(
             func, comm_files), total=len(comm_files)))
-
+    print(files)
+    exit(0)
     logging.info('Ancient synthetic reads generated.')
-
 
 def opt_parse(args=None):
     if args is None:

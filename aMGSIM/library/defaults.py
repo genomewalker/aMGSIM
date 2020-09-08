@@ -19,6 +19,8 @@ debug = None
 FWD_ADPT = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG"
 REV_ADPT = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT"
 
+IUPACAmbiguousDNA = {"G", "A", "T", "C", "R", "Y", "W", "S", "M", "K", 'H', "B", "V", "D", "N"}
+
 # schema_init_ag = {
 #     '<abund_table>': Use(open, error='<abund_table> should be readable'),
 #     '<genome_table>': Use(open, error='genome_table should be readable'),
@@ -138,9 +140,9 @@ ar_schema_config = {
                                                                 error="The key damage must be a list with positive values")
     },
     And("adptSim"): {
-        Optional("-f", default=FWD_ADPT): And(And(Use(str), lambda x: SeqRecord(Seq(x), annotations={"molecule_type": "DNA"})),
+        Optional("-f", default=FWD_ADPT): And(And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
                                               error="Forward adapter is not a valid sequence"),
-        Optional("-s", default=REV_ADPT): And(And(Use(str), lambda x: SeqRecord(Seq(x), annotations={"molecule_type": "DNA"})),
+        Optional("-s", default=REV_ADPT): And(And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
                                               error="Reverse adapter is not a valid sequence")
     },
     And("art"): {
