@@ -19,7 +19,9 @@ install_reqs = [
     'jsonpickle>=1.4.1',
     'tqdm>=4.48',
     'pyfaidx>=0.5.9',
-    'biolib>=0.1.6'
+    'biolib>=0.1.6',
+    'Cython>=0.29.21',
+    'pyranges>=0.0.84'
 ]
 
 ## install main application

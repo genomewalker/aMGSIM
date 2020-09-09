@@ -55,6 +55,7 @@ Description:
 
 # import
 # batteries
+from collections import defaultdict
 from docopt import docopt
 import sys
 import os
@@ -84,8 +85,9 @@ from mimetypes import guess_type
 from biolib.external.prodigal import Prodigal
 
 
-
 debug = None
+
+
 def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.__excepthook__):
     '''Print user friendly error messages normally, full traceback if DEBUG on.
        Adapted from http://stackoverflow.com/questions/27674602/hide-traceback-unless-a-debug-flag-is-set
@@ -96,13 +98,16 @@ def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.__exce
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
+def obj_dict(obj):
+    return obj.__dict__
 
 def run_fragSim(exe, params, seq_depth, ofile, tmp_dir, frag_ofile, fasta, debug):
 
@@ -601,26 +606,41 @@ def _combine_reads(read_files, output_dir, output_file, fastx):
 
 
 def _combine_fastq_types(file_type, data_modern, data_ancient, output_dir, comm, suffix):
-    r1 = list(set([s[file_type] for s in data_modern] +
-                  [s[file_type] for s in data_ancient]))
-    r2 = list(set([s[file_type] for s in data_modern] +
-                  [s[file_type] for s in data_ancient]))
-    sr = list(set([s[file_type] for s in data_modern] +
-                  [s[file_type] for s in data_ancient]))
-
-    r1 = sorted(r1)
-    r2 = sorted(r2)
 
     output_dir = os.path.join(output_dir, str(comm))
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-    # read1
-    R1_files = _combine_reads(read_files=r1, output_dir=output_dir,
-                              output_file='comm-{}_{}.1.fq'.format(comm, suffix), fastx="fastq")
-    # read2
-    if r2 is not None:
+
+    if "r1" in file_type:
+        r1 = list(set([s[file_type] for s in data_modern] +
+                      [s[file_type] for s in data_ancient]))
+        r1 = sorted(r1)
+        R1_files = _combine_reads(read_files=r1, output_dir=output_dir,
+                                  output_file='comm-{}_{}.1.fq'.format(comm, suffix), fastx="fastq")
+        files = {
+            "comm": comm,
+            "file_type": file_type.replace('_r1', ''),
+            "pair": "R1",
+            "file": R1_files
+        }
+
+    elif "r2" in file_type:
+        r2 = list(set([s[file_type] for s in data_modern] +
+                      [s[file_type] for s in data_ancient]))
+        r2 = sorted(r2)
         R2_files = _combine_reads(read_files=r2, output_dir=output_dir,
                                   output_file='comm-{}_{}.2.fq'.format(comm, suffix), fastx="fastq")
+        files = {
+            "comm": comm,
+            "file_type": file_type.replace('_r2', ''),
+            "pair": "R2",
+            "file": R2_files
+        }
+    else:
+        sr = list(set([s[file_type] for s in data_modern] +
+                      [s[file_type] for s in data_ancient]))
+
+    return files
 
 # TODO: CHeck if list of files are empty
 
@@ -631,7 +651,7 @@ def _combine_fasta_types(file_type, data_modern, data_ancient, output_dir, comm,
     else:
         sr = list(set([s[file_type] for s in data_modern] +
                       [s[file_type] for s in data_ancient]))
-    #if not sr:
+    # if not sr:
     sr = sorted(sr)
     output_dir = os.path.join(output_dir, str(comm))
 
@@ -639,7 +659,14 @@ def _combine_fasta_types(file_type, data_modern, data_ancient, output_dir, comm,
         os.makedirs(output_dir, exist_ok=True)
     # read1
     SR_files = _combine_reads(read_files=sr, output_dir=output_dir,
-                                output_file='comm-{}_{}.fa'.format(comm, suffix), fastx="fasta")
+                              output_file='comm-{}_{}.fa'.format(comm, suffix), fastx="fasta")
+    files = {
+        "comm": comm,
+        "file_type": file_type,
+        "pair": "SR",
+        "file": SR_files
+    }
+    return files
 
 
 def combine_fastx_files(x, output_dir, ancient_files, modern_files, exp_data):
@@ -669,9 +696,10 @@ def combine_fastx_files(x, output_dir, ancient_files, modern_files, exp_data):
                                      comm=comm)
     return files
 
-def predict_genes(x, cpus, output_dir, called_genes=False, translation_table=None, meta=False, closed_ends=False, verbose = True):
+
+def predict_genes(x, cpus, output_dir, called_genes=False, translation_table=None, meta=False, closed_ends=False, verbose=True):
     genome = [x[4]]
-    prodigal = Prodigal(cpus=cpus, verbose = verbose)
+    prodigal = Prodigal(cpus=cpus, verbose=verbose)
     genes = prodigal.run(
         genome_files=genome,
         output_dir=output_dir,
@@ -681,14 +709,15 @@ def predict_genes(x, cpus, output_dir, called_genes=False, translation_table=Non
         closed_ends=False)
     return(genes)
 
+
 def main(args):
-    
+
     global debug
     if args['--debug']:
         debug = True
     else:
         debug = None
-    
+
     sys.excepthook = exceptionHandler
 
     # simulating reads
@@ -709,11 +738,9 @@ def main(args):
 
     # load tables
     genome_table = SimReads.load_genome_table(args['<genome_table>'])
-    # abund_table = SimReads.load_abund_table(args['<abund_table>'])
-    # create pairwise
-    # sample_taxon = SimReadsAncient.sample_taxon_list(genome_table,
-    #                                                  abund_table)
+
     with open(fragSim_params['ancient_genomes'], "r") as json_file:
+        filename = json_file
         ancient_genomes = json.load(json_file)
     ancient_genomes_data = ancient_genomes["data"]
     ancient_genomes_exp = ancient_genomes["experiment"]
@@ -772,9 +799,29 @@ def main(args):
     else:
         p = Pool(config_params['cpus'])
         files = list(tqdm.tqdm(p.imap_unordered(
-            func, comm_files), total=len(comm_files)))
-    print(files)
-    exit(0)
+            func, comm_files), total=len(comm_files)))    
+    
+    
+    df = pd.DataFrame(files).sort_values('comm')
+    
+    
+    read_files = {}
+     
+    for i in df['comm'].unique():
+        read_files[str(i)] = df.groupby(["file_type"])[["pair","file"]].apply(lambda x: dict(x.values)).to_dict()
+
+    file_name = Path(filename.name).stem
+    dir_name = Path(filename.name).parent
+    
+    suffix = ".json"
+    read_files_ofile = Path(dir_name, "{}_read-files".format(file_name)).with_suffix(suffix)
+    
+    read_files_json = json.dumps(
+        read_files, default=obj_dict, ensure_ascii=False, indent=4)
+    
+    with open(read_files_ofile, 'w', encoding='utf-8') as outfile:
+        print(read_files_json, file=outfile)
+    
     logging.info('Ancient synthetic reads generated.')
 
 def opt_parse(args=None):
@@ -783,3 +830,5 @@ def opt_parse(args=None):
     else:
         args = docopt(__doc__, version='0.1', argv=args)
     main(args)
+
+# %%

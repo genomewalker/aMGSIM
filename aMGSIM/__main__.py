@@ -11,11 +11,10 @@ from docopt import docopt
 from MGSIM.Commands import Communities
 from MGSIM.Commands import Genome_download
 from MGSIM.Commands import Genome_rename
-from MGSIM.Commands import Reads
-from MGSIM.Commands import HtReads
 from aMGSIM.Commands import AncientGenomes
 from aMGSIM.Commands import SingleAncientGenome
 from aMGSIM.Commands import ReadsAncient
+from aMGSIM.Commands import ProteinAnalysis
 
 def main(args=None):
     """Main entry point for application
@@ -52,11 +51,10 @@ Description:
     cmds = {'communities' : Communities,
             'genome_download' : Genome_download,
             'genome_rename' : Genome_rename,
-            'reads' : Reads,
             'ancient-reads' : ReadsAncient,
-            'ht_reads' : HtReads,
             'ancient-genomes': AncientGenomes,
-            'single-ancient-genome': SingleAncientGenome}
+            'protein-analysis': ProteinAnalysis
+            }
     
     # list subcommands
     if args['--list']:
