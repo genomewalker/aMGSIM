@@ -4,15 +4,18 @@
 protein-analysis: simulating ancient reads
 
 Usage:
-  protein-analysis [options] <genomes> <files>
+  protein-analysis [options] <files>
   protein-analysis -h | --help
   protein-analysis --version
 
 Options:
-  <genomes>              Config parameters
   <files>                read files
   -p --cpus=<p>          cpus
                          [default: 1]
+  -m --minlen=<l>        Minimum ORF size
+                         [default: 30]
+  -t --tmp=<d>           Tmp dir
+                         [default: .tmp]
   -d --debug             Debug mode (no subprocesses; verbose output)
   -h --help              Show this screen.
   --version              Show version.
@@ -37,6 +40,13 @@ Description:
 # %%
 # import
 # batteries
+import re
+import pyranges as pr
+import gzip
+from mimetypes import guess_type
+from biolib.external.prodigal import Prodigal
+from Bio import SeqIO
+
 from docopt import docopt
 import logging
 import pandas as pd
@@ -46,75 +56,30 @@ import numpy as np
 import json
 from pathlib import Path
 import sys
+
 # application
-from MGSIM import SimReads
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f
+from aMGSIM.library import pa_functions as pa
+
 import jsonpickle
 import datetime
 import tqdm
 import os
-from biolib.external.prodigal import Prodigal, ProdigalGeneFeatureParser
-import Bio.Data.CodonTable
-from itertools import product
 import json
 
 # Codon functions
-
-# codons = Bio.Data.CodonTable.standard_dna_table.forward_table
-# codons_stop = Bio.Data.CodonTable.standard_dna_table.stop_codons
-# codons_stop = {el: '*' for el in codons_stop}
-# codons = {**codons, **codons_stop}
-
-# # Get codons that can get damaged
-# # C -> T
-
-# filtered_dict = {k: v for (k, v) in codons.items() if "C" in k}
-# codon_list = (list(filtered_dict.keys()))
-
-# d = {
-#     "A": "A",
-#     "T": "T",
-#     "G": "G",
-#     "C": ["T", "C"],
-#     }
-
-# d_rev = {
-#     "T": "T",
-#     "C": "C",
-#     "A": "A",
-#     "G": ["G", "A"],
-#     }
-
-# codons_damage = {}
-# for k in codon_list:
-#     c_list = list(map("".join, product(*map(d.get, k))))
-#     c_list.remove(str(k))
-#     codons_damage[k] = {"aa": codons[str(k)],
-#                         "mods": {el: codons[str(el)] for el in c_list}
-#                         }
-
-
-# # A -> G
-# filtered_dict_rev = {k: v for (k, v) in codons.items() if "G" in k}
-# codon_list_rev = (list(filtered_dict_rev.keys()))
-# codons_damage_rev = {}
-# for k in codon_list_rev:
-#     c_list = list(map("".join, product(*map(d_rev.get, k))))
-#     c_list.remove(str(k))
-#     codons_damage_rev[k] = {"aa": codons[str(k)],
-#                             "mods": {el: codons[str(el)] for el in c_list}
-#                             }
-# print(json.dumps(codons_damage_rev, indent=4))
 
 
 debug = None
 
 
-def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.__excepthook__):
-    '''Print user friendly error messages normally, full traceback if DEBUG on.
-       Adapted from http://stackoverflow.com/questions/27674602/hide-traceback-unless-a-debug-flag-is-set
-    '''
+def exceptionHandler(
+    exception_type, exception, traceback, debug_hook=sys.__excepthook__
+):
+    """Print user friendly error messages normally, full traceback if DEBUG on.
+    Adapted from http://stackoverflow.com/questions/27674602/hide-traceback-unless-a-debug-flag-is-set
+    """
     if debug:
         print("\n*** Error:")
         # raise
@@ -123,115 +88,133 @@ def exceptionHandler(exception_type, exception, traceback, debug_hook=sys.__exce
         print("{}: {}".format(exception_type.__name__, exception))
 
 
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
 
 
 # logging
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
 
 
 def obj_dict(obj):
     return obj.__dict__
 
+
 # Read files and get coordinates
+
+
+def opt_parse(args=None):
+    if args is None:
+        args = docopt(__doc__, version="0.1")
+    else:
+        args = docopt(__doc__, version="0.1", argv=args)
+    main(args)
 
 
 def main(args):
     global debug
-    if args['--debug']:
+    if args["--debug"]:
         debug = True
     else:
         debug = None
 
     sys.excepthook = exceptionHandler
-        
-    nproc = int(args['--cpus'])
-    genome_table = SimReads.load_genome_table(args['<genomes>'])
-    with open(args['<files>'], "r") as json_file:
+
+    nproc = int(args["--cpus"])
+
+    with open(args["<files>"], "r") as json_file:
         filename = json_file
         files = json.load(json_file)
 
-    tmp_dir = ".tmp"
+    genomes = files["genomes"]
+
+    tmp_dir = args(["--tmp"])
 
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
 
-    logging.info('Predicting genes from genomes...')
+    logging.info("Predicting genes from genomes...")
     output_dir = os.path.join(tmp_dir, "gene_prediction")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
 
-    # func = partial(predict_genes,
-    #                cpus=1,
-    #                verbose = True,
-    #                output_dir=output_dir,
-    #                called_genes=False,
-    #                translation_table=None,
-    #                meta=False,
-    #                closed_ends=False)
-
-    # if debug is True:
-    #     gene_predictions = list(map(func, genomes))
-    # else:
-    #     p = Pool(nproc)
-    #     gene_predictions = list(
-    #         tqdm.tqdm(p.imap_unordered(func, genomes), total=len(genomes)))
-    #     # ancient_genomes_data = p.map(func, genomes)
-
     prodigal = Prodigal(cpus=nproc, verbose=True)
     genes = prodigal.run(
-        genome_files=set(genome_table.Fasta.values),
+        genome_files=genomes,
         output_dir=output_dir,
         called_genes=False,
         translation_table=None,
         meta=False,
-        closed_ends=False)
+        closed_ends=False,
+    )
 
-    gffs = {}
-    for i in genes:
-        print(i)
-        gffs[i] = ProdigalGeneFeatureParser(genes[i].gff_file)
+    deam_file = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/test_out3/1/comm-1_deamSim.fa"
+    fragsim_file = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/test_out3/1/comm-1_fragSim.fa"
+    fasta_file = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/test_out3/genomes/GCA_000007185.fasta"
 
-#%%
-import pyranges as pr
-import pandas as pd
-from Bio import SeqIO
-from mimetypes import guess_type
-import itertools
-import gzip
-import re
-
-gff_file = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/.tmp/gene_prediction/GCA_000007185.1.gff"
-gff = pr.read_gtf(gff_file, as_df = False)
-
-deam_file = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/test_out3/1/comm-1_deamSim.fa"
-recs = []
-encoding = guess_type(deam_file)[1]  # uses file extension
-
-_open = partial(
-                gzip.open, mode='rt') if encoding == 'gzip' else open
-
-pattern = re.compile("(\S+)__(\S+)--(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)")
-with _open(deam_file) as f:
-    records = enumerate(SeqIO.parse(f, 'fasta'))
+    # Genes
+    fna = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/.tmp/gene_prediction/GCA_000007185_genes.fna"
+    faa = "/vol/cloud/antonio/projects/anc-com-sim/sandbox/test_data/.tmp/gene_prediction/GCA_000007185_genes.faa"
 
     recs = []
-    for i, record in records:
-        m1 = re.match(pattern, record.id)
-        read = {"Chromosome"   | Start     | End       | Name                                   | Score     | Strand 
-            
-        }
-    print(recs[0])
+    encoding = guess_type(deam_file)[1]  # uses file extension
+    _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
 
-#%%    
-    print(gffs)
-    #print(json.dumps(gffs, indent=4))
+    pattern = re.compile("(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)")
+    with _open(deam_file) as f:
+        records = enumerate(SeqIO.parse(f, "fasta"))
+        recs = pa.get_headers(records=records, pattern=pattern)
+        df = pd.DataFrame(recs)
 
-def opt_parse(args=None):
-    if args is None:
-        args = docopt(__doc__, version='0.1')
-    else:
-        args = docopt(__doc__, version='0.1', argv=args)
-    main(args)
+    # Get reads
+    df_reads = pr.PyRanges(df)
 
-# %%
+    # Get genes info
+    genes = pa.get_gene_coordinates(fna=fna)
+
+    # Get intersections
+    # Will rop intersects that are too short for coding AAs
+    r2g_intersections = pa.get_intersections(
+        reads=df_reads, genes=genes, genome=fasta_file, min_len=min_len
+    )
+
+    names = {"Start_b": "Start_gene", "End_b": "End_gene", "Strand": "Strand_gene"}
+    r2g_intersections = r2g_intersections.join(genes.drop("type"), report_overlap=True)
+    r2g_intersections = pr.PyRanges(
+        r2g_intersections.df[
+            r2g_intersections.df["Overlap"] == r2g_intersections.df["intersect_length"]
+        ].rename(columns=names)
+    )
+    r2g_intersections_df = r2g_intersections.df
+    gn = r2g_intersections_df["Name"]
+    read_multi_span = r2g_intersections_df[gn.isin(gn[gn.duplicated()])].sort_values(
+        "Name"
+    )
+    # len(read_multi_span.index)
+
+    # Get sequence from interval
+    r2g_intersections.nondamaged_seq = pa.get_nondamaged_seqs(
+        intersections=r2g_intersections, genome=fasta_file
+    )
+
+    r2g_intersections = pa.get_damaged_seqs(
+        intersections=r2g_intersections, deam_file=deam_file
+    )
+
+    r2g_intersections.damage_intersection = r2g_intersections.df.apply(
+        pa.find_damage, axis=1
+    )
+
+    aa_damage = r2g_intersections.df.merge(
+        pa.fasta_to_dataframe(fna)[["name", "sequence"]].rename(
+            columns={"name": "gene_name"}
+        )
+    ).apply(pa.get_seqs_inframe, axis=1)
+    aa_damage = aa_damage.reset_index()
+
+    # test[['Strand_read','damage_aaseq_diffs', 'damage_codon_diffs']]
+    # test[~test.damage_aaseq_diffs.isnull()][['Strand_read','damage_aaseq_diffs', 'damage_codon_diffs']]
+
+    # test_aa = test[['Name', 'gene_name', 'intersect_seq_inframe_aa', 'Strand_read', 'Strand_gene']].merge(
+    #     fasta_to_dataframe(faa)[["name", "sequence"]].rename(columns={"name": "gene_name", "sequence": "sequence_aa"}))
+    # test_aa_filt = test[test.apply(
+    #     lambda x: x.intersect_seq_inframe_aa not in x.sequence_aa, axis=1)].reset_index()

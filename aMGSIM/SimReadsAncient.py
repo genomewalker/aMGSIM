@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 # import
 # batteries
 import os
@@ -14,14 +15,13 @@ import pandas as pd
 from Bio import SeqIO
 
 # logging
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
 
 
 # functions
 def tidy_taxon_names(x):
-    """Remove special characters from taxon names
-    """
-    x = re.sub(r'[()\/:;, ]+', '_', x)
+    """Remove special characters from taxon names"""
+    x = re.sub(r"[()\/:;, ]+", "_", x)
     return x
 
 
@@ -32,21 +32,22 @@ def load_genome_table(in_file):
     in_file : str
         input file path
     """
-    df = pd.read_csv(in_file, sep='\t')
+    df = pd.read_csv(in_file, sep="\t")
 
     # check headers
-    diff = set(['Taxon', 'Fasta']) - set(df.columns.values)
+    diff = set(["Taxon", "Fasta"]) - set(df.columns.values)
     if len(diff) > 0:
-        diff = ','.join(diff)
-        raise ValueError('Cannot find table columns: {}'.format(diff))
+        diff = ",".join(diff)
+        raise ValueError("Cannot find table columns: {}".format(diff))
 
     # getting genome sizes
-    df['Genome_size'] = [_genome_size(x) for i, x in df.iterrows()]
+    df["Genome_size"] = [_genome_size(x) for i, x in df.iterrows()]
 
     # tidy taxon names
-    df['Taxon'] = df['Taxon'].astype(str).apply(tidy_taxon_names)
+    df["Taxon"] = df["Taxon"].astype(str).apply(tidy_taxon_names)
 
     return df
+
 
 # Load ancient genomes parameters
 def load_ancient_genomes(json_file):
@@ -62,7 +63,7 @@ def _genome_size(x):
        Series that includes 'Fasta' in the index
     """
     bp = 0
-    for record in SeqIO.parse(x['Fasta'], 'fasta'):
+    for record in SeqIO.parse(x["Fasta"], "fasta"):
         bp += len(record.seq)
     return bp
 
@@ -74,17 +75,16 @@ def load_abund_table(in_file):
     in_file : str
         input file path
     """
-    df = pd.read_csv(in_file, sep='\t')
+    df = pd.read_csv(in_file, sep="\t")
 
     # check headers
-    diff = set(['Community', 'Taxon', 'Perc_rel_abund']) - \
-        set(df.columns.values)
+    diff = set(["Community", "Taxon", "Perc_rel_abund"]) - set(df.columns.values)
     if len(diff) > 0:
-        diff = ','.join(diff)
-        raise ValueError('Cannot find table columns: {}'.format(diff))
+        diff = ",".join(diff)
+        raise ValueError("Cannot find table columns: {}".format(diff))
 
     # tidy taxon names
-    df['Taxon'] = df['Taxon'].astype(str).apply(tidy_taxon_names)
+    df["Taxon"] = df["Taxon"].astype(str).apply(tidy_taxon_names)
 
     return df
 
@@ -93,8 +93,9 @@ def create_fragSim_params(fragSim_params, type):
     # Create params for ancient and modern
     if type == "ancient":
 
-        fragSim_params = ' '.join(['--{} {}'.format(k, v)
-                                   for k, v in fragSim_params.items()])
+        fragSim_params = " ".join(
+            ["--{} {}".format(k, v) for k, v in fragSim_params.items()]
+        )
     else:
         pass
 
@@ -107,25 +108,31 @@ def sample_taxon_list(genome_table, abund_table):
     abund_table : pd.DataFrame
     """
     # joining tables
-    df = abund_table.merge(genome_table, on=['Taxon'])
-    
+    df = abund_table.merge(genome_table, on=["Taxon"])
+
     # convert to a list of lists
     sample_taxon = []
-    cols = ['Community', 'Taxon', 'Genome_size',
-            'Fasta', 'Perc_rel_abund']
+    cols = ["Community", "Taxon", "Genome_size", "Fasta", "Perc_rel_abund"]
     for i, x in df[cols].iterrows():
         sample_taxon.append(x.tolist())
     return sample_taxon
 
-#def generate_random_ancient_taxon(self):
-    
-    
+
+# def generate_random_ancient_taxon(self):
 
 
-def sim_illumina_ancient(sample_taxon, output_dir, seq_depth,
-                         fragSim_exe, fragSim_params,
-                         art_params, art_exe,
-                         temp_dir, nproc=1, debug=False):
+def sim_illumina_ancient(
+    sample_taxon,
+    output_dir,
+    seq_depth,
+    fragSim_exe,
+    fragSim_params,
+    art_params,
+    art_exe,
+    temp_dir,
+    nproc=1,
+    debug=False,
+):
     """Simulate illumina reads
     Parameters
     ----------
@@ -156,23 +163,35 @@ def sim_illumina_ancient(sample_taxon, output_dir, seq_depth,
         genome_size = float(x[2])
         perc_rel_abund = float(x[4])
         try:
-            _ = art_params['paired']
+            _ = art_params["paired"]
             paired = 2
         except KeyError:
             try:
-                art_params['mflen']
+                art_params["mflen"]
                 paired = 2
             except KeyError:
                 paired = 1
-        read_length = art_params['len'] * paired
-        seq_depth_ancient = int((cov_ancient * genome_size)/read_length)
+        read_length = art_params["len"] * paired
+        seq_depth_ancient = int((cov_ancient * genome_size) / read_length)
         seq_depth_modern = int(seq_depth - seq_depth_ancient)
-        fold_modern = (perc_rel_abund/100) * \
-            ((seq_depth_modern * read_length) / genome_size)
-        fold_ancient = (perc_rel_abund/100) * \
-            ((seq_depth_ancient * read_length) / genome_size)
-        print('genome:{} fold_modern: {} fold_ancient:{} perc_rel_abund:{} seq_depth_modern:{} seq_depth_ancient: {} read_length:{} genome_size:{}'.format(
-            x[1], fold_modern, fold_ancient, perc_rel_abund, seq_depth_modern, seq_depth_ancient, read_length, genome_size))
+        fold_modern = (perc_rel_abund / 100) * (
+            (seq_depth_modern * read_length) / genome_size
+        )
+        fold_ancient = (perc_rel_abund / 100) * (
+            (seq_depth_ancient * read_length) / genome_size
+        )
+        print(
+            "genome:{} fold_modern: {} fold_ancient:{} perc_rel_abund:{} seq_depth_modern:{} seq_depth_ancient: {} read_length:{} genome_size:{}".format(
+                x[1],
+                fold_modern,
+                fold_ancient,
+                perc_rel_abund,
+                seq_depth_modern,
+                seq_depth_ancient,
+                read_length,
+                genome_size,
+            )
+        )
         x.append(seq_depth_modern)
         x.append(fold_modern)
         x.append(seq_depth_ancient)
@@ -187,12 +206,14 @@ def sim_illumina_ancient(sample_taxon, output_dir, seq_depth,
         os.makedirs(output_dir)
 
     # simulate per sample
-    logging.info('Simulating reads...')
-    func = partial(sim_art_ancient,
-                   art_exe=art_exe,
-                   art_params=art_params,
-                   temp_dir=temp_dir,
-                   debug=debug)
+    logging.info("Simulating reads...")
+    func = partial(
+        sim_art_ancient,
+        art_exe=art_exe,
+        art_params=art_params,
+        temp_dir=temp_dir,
+        debug=debug,
+    )
     if debug is True:
         fq_files = map(func, sample_taxon)
     else:
@@ -201,14 +222,16 @@ def sim_illumina_ancient(sample_taxon, output_dir, seq_depth,
     fq_files = list(fq_files)
 
     # combining all reads by sample
-    logging.info('Combining simulated reads by sample...')
+    logging.info("Combining simulated reads by sample...")
     comms = list(set([x[0] for x in sample_taxon]))
-    func = partial(combine_reads_by_sample,
-                   fq_files=fq_files,
-                   temp_dir=temp_dir,
-                   file_prefix='illumina',
-                   output_dir=output_dir,
-                   debug=debug)
+    func = partial(
+        combine_reads_by_sample,
+        fq_files=fq_files,
+        temp_dir=temp_dir,
+        file_prefix="illumina",
+        output_dir=output_dir,
+        debug=debug,
+    )
     if debug is True:
         res = map(func, comms)
     else:
@@ -217,14 +240,14 @@ def sim_illumina_ancient(sample_taxon, output_dir, seq_depth,
     res = list(res)
 
     # removing temp dir
-    logging.info('Removing temp directory...')
+    logging.info("Removing temp directory...")
     # rmtree(temp_dir)
 
     # status
     for sample_list in res:
         for file_name in sample_list:
             if file_name is not None:
-                logging.info('File written: {}'.format(file_name))
+                logging.info("File written: {}".format(file_name))
 
 
 def sim_art_ancient(x, art_exe, art_params, temp_dir, debug=False):
@@ -246,7 +269,7 @@ def sim_art_ancient(x, art_exe, art_params, temp_dir, debug=False):
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
     # temporary files
-    output_prefix = os.path.join(out_dir, 'illumina')
+    output_prefix = os.path.join(out_dir, "illumina")
 
     # 1. Create fragments with fragSim
 
@@ -262,27 +285,27 @@ def sim_art_ancient(x, art_exe, art_params, temp_dir, debug=False):
     # print(cmd)
     # system call
     if debug is True:
-        sys.stderr.write('CMD: ' + cmd + '\n')
+        sys.stderr.write("CMD: " + cmd + "\n")
     try:
-        res = subprocess.run(cmd, check=True, shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        res = subprocess.run(
+            cmd, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
     except subprocess.CalledProcessError as e:
         raise e
     if debug is True:
-        sys.stderr.write(res.stderr.decode() + '\n')
-        sys.stderr.write(res.stdout.decode() + '\n')
+        sys.stderr.write(res.stderr.decode() + "\n")
+        sys.stderr.write(res.stdout.decode() + "\n")
 
     # check that files have been created
-    R0_file = output_prefix + '.fq'
-    R1_file = output_prefix + '1.fq'
-    R2_file = output_prefix + '2.fq'
+    R0_file = output_prefix + ".fq"
+    R1_file = output_prefix + "1.fq"
+    R2_file = output_prefix + "2.fq"
     if os.path.isfile(R1_file) and os.path.isfile(R2_file):
         return [community, R1_file, R2_file]
     elif os.path.isfile(R0_file):
         return [community, R0_file]
     else:
-        msg = 'Cannot find art_illumina output files!'
+        msg = "Cannot find art_illumina output files!"
         raise ValueError(msg)
 
     # 2. Add deamination to the ancient sequences
@@ -291,44 +314,49 @@ def sim_art_ancient(x, art_exe, art_params, temp_dir, debug=False):
 
     # 4. Add errors with ART
 
-    art_params = ' '.join(['--{} {}'.format(k, v)
-                           for k, v in art_params.items()])
+    art_params = " ".join(["--{} {}".format(k, v) for k, v in art_params.items()])
     # art command
-    cmd = '{art_exe} {art_params} --noALN -f {fold_modern} -i {input} -o {output_prefix}'
-    cmd = cmd.format(art_exe=art_exe,
-                     art_params=art_params,
-                     fold_modern=fold_modern,
-                     input=fasta,
-                     output_prefix=output_prefix)
+    cmd = (
+        "{art_exe} {art_params} --noALN -f {fold_modern} -i {input} -o {output_prefix}"
+    )
+    cmd = cmd.format(
+        art_exe=art_exe,
+        art_params=art_params,
+        fold_modern=fold_modern,
+        input=fasta,
+        output_prefix=output_prefix,
+    )
     print(cmd)
     # system call
     if debug is True:
-        sys.stderr.write('CMD: ' + cmd + '\n')
+        sys.stderr.write("CMD: " + cmd + "\n")
     try:
-        res = subprocess.run(cmd, check=True, shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        res = subprocess.run(
+            cmd, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
     except subprocess.CalledProcessError as e:
         raise e
     if debug is True:
-        sys.stderr.write(res.stderr.decode() + '\n')
-        sys.stderr.write(res.stdout.decode() + '\n')
+        sys.stderr.write(res.stderr.decode() + "\n")
+        sys.stderr.write(res.stdout.decode() + "\n")
 
     # check that files have been created
-    R0_file = output_prefix + '.fq'
-    R1_file = output_prefix + '1.fq'
-    R2_file = output_prefix + '2.fq'
+    R0_file = output_prefix + ".fq"
+    R1_file = output_prefix + "1.fq"
+    R2_file = output_prefix + "2.fq"
     if os.path.isfile(R1_file) and os.path.isfile(R2_file):
         return [community, R1_file, R2_file]
     elif os.path.isfile(R0_file):
         return [community, R0_file]
     else:
-        msg = 'Cannot find art_illumina output files!'
+        msg = "Cannot find art_illumina output files!"
         raise ValueError(msg)
 
 
-def combine_reads_by_sample(sample, fq_files, temp_dir, file_prefix, output_dir, debug=False):
-    """ Concat all sample-taxon read files into per-sample read files
+def combine_reads_by_sample(
+    sample, fq_files, temp_dir, file_prefix, output_dir, debug=False
+):
+    """Concat all sample-taxon read files into per-sample read files
     Parameters
     ----------
     sample : str
@@ -355,10 +383,10 @@ def combine_reads_by_sample(sample, fq_files, temp_dir, file_prefix, output_dir,
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     # read1
-    R1_files = _combine_reads(R1_files, output_dir, 'R1.fq')
+    R1_files = _combine_reads(R1_files, output_dir, "R1.fq")
     # read2
     if R2_files is not None:
-        R2_files = _combine_reads(R2_files, output_dir, 'R2.fq')
+        R2_files = _combine_reads(R2_files, output_dir, "R2.fq")
 
     return [R1_files, R2_files]
 
@@ -375,15 +403,15 @@ def _combine_reads(read_files, output_dir, output_file):
         Output file path
     """
     output_file = os.path.join(output_dir, output_file)
-    with open(output_file, 'w') as outFH:
+    with open(output_file, "w") as outFH:
         for in_file in read_files:
             taxon = os.path.split(os.path.split(in_file)[0])[1]
-            for i, record in enumerate(SeqIO.parse(in_file, 'fastq')):
+            for i, record in enumerate(SeqIO.parse(in_file, "fastq")):
                 # renaming fastq read
-                name = '{}__SEQ{}'.format(taxon, i)
+                name = "{}__SEQ{}".format(taxon, i)
                 record.id = name
                 record.description = name
-                SeqIO.write(record, outFH, 'fastq')
+                SeqIO.write(record, outFH, "fastq")
             # delete temporary file
             os.remove(in_file)
 

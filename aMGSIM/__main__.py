@@ -4,9 +4,11 @@
 ## batteries
 import os
 import sys
+
 ## 3rd party
 from docopt import docopt
-#import Utils
+
+# import Utils
 ## application
 from MGSIM.Commands import Communities
 from MGSIM.Commands import Genome_download
@@ -16,12 +18,12 @@ from aMGSIM.Commands import SingleAncientGenome
 from aMGSIM.Commands import ReadsAncient
 from aMGSIM.Commands import ProteinAnalysis
 
+
 def main(args=None):
-    """Main entry point for application
-    """
+    """Main entry point for application"""
     if args is None:
         args = sys.argv[1:]
-    
+
     docs = """
 MGSIM: simulate ancient metagenomes for multiple synthetic communities
 
@@ -43,35 +45,34 @@ Description:
   See the sub-command documentation for more information on features.
     """
     # arg parse
-    args = docopt(docs,
-                  version='0.1',
-                  options_first=True)
+    args = docopt(docs, version="0.1", options_first=True)
 
     # dict of all subcommands
-    cmds = {'communities' : Communities,
-            'genome_download' : Genome_download,
-            'genome_rename' : Genome_rename,
-            'ancient-reads' : ReadsAncient,
-            'ancient-genomes': AncientGenomes,
-            'protein-analysis': ProteinAnalysis
-            }
-    
+    cmds = {
+        "communities": Communities,
+        "genome-download": Genome_download,
+        "genome-rename": Genome_rename,
+        "ancient-reads": ReadsAncient,
+        "ancient-genomes": AncientGenomes,
+        "protein-analysis": ProteinAnalysis,
+    }
+
     # list subcommands
-    if args['--list']:
-        cmd_list = '\n'.join(sorted(cmds.keys(), key=str.lower))
-        print('#-- Commands --#')
+    if args["--list"]:
+        cmd_list = "\n".join(sorted(cmds.keys(), key=str.lower))
+        print("#-- Commands --#")
         print(cmd_list)
         exit()
 
-    # running subcommand    
+    # running subcommand
     try:
-        func = cmds[args['<command>']]
+        func = cmds[args["<command>"]]
     except KeyError:
         msg = 'ERROR: command "{}" does not exist'
-        print(msg.format(args['<command>']))
-        exit()        
-    func.opt_parse(args['<args>'])
+        print(msg.format(args["<command>"]))
+        exit()
+    func.opt_parse(args["<args>"])
 
-    
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

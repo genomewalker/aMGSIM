@@ -21,7 +21,8 @@ install_reqs = [
     'pyfaidx>=0.5.9',
     'biolib>=0.1.6',
     'Cython>=0.29.21',
-    'pyranges>=0.0.84'
+    'pyranges>=0.0.84',
+    'ray>=0.8.7'
 ]
 
 ## install main application

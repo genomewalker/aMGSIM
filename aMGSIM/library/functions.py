@@ -14,18 +14,23 @@ import traceback
 import json
 import shutil
 import datetime
+import gzip
+from mimetypes import guess_type
+from Bio import SeqIO
+import pandas as pd
+from multiprocessing import Pool
 
 
 def str2dict(s):
     """Parsing string (format: 'item:value,item:value')
-    to create a dict object.    
+    to create a dict object.
     """
-    if hasattr(s, 'split'):
-        l = re.split('[:,]', s)
+    if hasattr(s, "split"):
+        l = re.split("[:,]", s)
         try:
             return {k.lower(): float(v) for k, v in zip(l[0::2], l[1::2])}
         except TypeError:
-            msg = 'Coverage parameter values must be ints or floats.'
+            msg = "Coverage parameter values must be ints or floats."
             raise TypeError(msg)
     else:
         return s
@@ -42,12 +47,12 @@ def validate_schema(self, schema, debug):
         else:
             print("{}: {}".format(type(e).__name__, e))
             sys.exit(1)
-    return(self)
+    return self
 
 
 def merge_args(self, conf_args, orig_args):
-    """ Return new dict with args, and then conf_args merged in.
-        Make sure that any keys in conf_args are also present in args
+    """Return new dict with args, and then conf_args merged in.
+    Make sure that any keys in conf_args are also present in args
     """
     args = {}
     for k in conf_args.keys():
@@ -61,70 +66,74 @@ def merge_args(self, conf_args, orig_args):
 
 
 def ordered_load(stream, Loader=ruamel.yaml.Loader, object_pairs_hook=OrderedDict):
-    """ Helper function to allow yaml load routine to use an OrderedDict instead of regular dict.
-        This helps keeps things sane when ordering the runs and printing out routines
+    """Helper function to allow yaml load routine to use an OrderedDict instead of regular dict.
+    This helps keeps things sane when ordering the runs and printing out routines
     """
+
     class OrderedLoader(Loader):
         pass
 
     def construct_mapping(loader, node):
         loader.flatten_mapping(node)
         return object_pairs_hook(loader.construct_pairs(node))
+
     OrderedLoader.add_constructor(
-        ruamel.yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-        construct_mapping)
+        ruamel.yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping
+    )
     return ruamel.yaml.load(stream, OrderedLoader)
 
 
 def check_correct_class(key, var_type):
     if key is not None:
         if not isinstance(key, var_type):
-            raise TypeError('Parameter {} has wrong type {}. It should be {}'.format(
-                key, type(key).__name__, var_type.__name__))
+            raise TypeError(
+                "Parameter {} has wrong type {}. It should be {}".format(
+                    key, type(key).__name__, var_type.__name__
+                )
+            )
 
 
 def check_config_key_exec(key, params, default, var_type):
     check_correct_class(params[key], var_type)
 
-    if ((key in params) and (params[key] != '')):
+    if (key in params) and (params[key] != ""):
         key = params[key]
     else:
         key = default[key]
     check_exec(key)
-    return(key)
+    return key
 
 
 def check_config_key(key, params, default, var_type):
     check_correct_class(params[key], var_type)
-    if ((key in params) and (params[key] != '') and (params[key] is not None)):
+    if (key in params) and (params[key] != "") and (params[key] is not None):
         key = params[key]
     else:
         key = default[key]
-    return(key)
+    return key
 
 
 def check_config_key_file(key, params, default, var_type, schema, debug):
     check_correct_class(params[key], var_type)
-    if ((key in params) and (params[key] != '') and (params[key] is not None)):
+    if (key in params) and (params[key] != "") and (params[key] is not None):
         file = {key: params[key]}
         file = validate_schema(file, schema, debug)
     else:
         raise IOError("{} is obligatory".format(key))
     # check schema and return dict
-    return(file[key])
+    return file[key]
 
 
 def check_exec(self):
     if find_executable(self) == None:
-        raise IOError('Cannot find executable: {}'.format(self))
+        raise IOError("Cannot find executable: {}".format(self))
 
 
 def get_config(config, schema, debug):
-    """ Helper function to get the basic config params
-    """
+    """Helper function to get the basic config params"""
     parameters = ordered_load(config)
     config = validate_schema(dict(parameters), schema, debug)
-    return(config)
+    return config
 
 
 # def get_art_params(config):
@@ -177,7 +186,7 @@ def get_config(config, schema, debug):
 #         Parameters accepted:
 #             comp: --comp,
 #             dist: --dist,
-#             norev: --norev, 
+#             norev: --norev,
 #             case: --case,
 #             frag_length_file: -l but for each sample,
 #             default_length: -l all sample same length,
@@ -245,18 +254,18 @@ def get_freq_dist(dist, params):
         msg = 'Distribution "{}" is not supported'.format(dist)
         raise AttributeError(msg)
 
-    if dist == 'power':
+    if dist == "power":
         distFunc = power_neg
     # expected_length = lognorm.expect(lambda x :max(x,min_length), args=[s],
     #                                     loc=loc, scale=scale, lb=-np.inf, ub=np.inf)
     try:
         return partial(distFunc, **params)
     except TypeError:
-        param_str = [':'.join([str(k), str(v)]) for k, v in params.items()]
-        param_str = ','.join(param_str)
-        msg = 'Params "{}" do not work with function "{}"'\
-              .format(param_str, dist)
+        param_str = [":".join([str(k), str(v)]) for k, v in params.items()]
+        param_str = ",".join(param_str)
+        msg = 'Params "{}" do not work with function "{}"'.format(param_str, dist)
         raise TypeError(msg)
+
 
 # From https://stackoverflow.com/a/41477069
 
@@ -267,9 +276,63 @@ def lognorm_params(mode, stddev):
     returns the shape and scale parameters for scipy's parameterization of the
     distribution.
     """
-    p = np.poly1d([1, -1, 0, 0, -(stddev/mode)**2])
+    p = np.poly1d([1, -1, 0, 0, -((stddev / mode) ** 2)])
     r = p.roots
     sol = r[(r.imag == 0) & (r.real > 0)].real
     shape = np.sqrt(np.log(sol))
     scale = mode * sol
     return shape, scale
+
+
+# functions
+def tidy_taxon_names(x):
+    """Remove special characters from taxon names"""
+    x = re.sub(r"[()\/:;, ]+", "_", x)
+    return x
+
+
+def load_genome_table(in_file, nproc=1):
+    """Loading genome table
+    Parameters
+    ----------
+    in_file : str
+        input file path
+    """
+    nproc = int(nproc)
+    df = pd.read_csv(in_file, sep="\t")
+
+    ## check headers
+    diff = set(["Taxon", "Fasta"]) - set(df.columns.values)
+    if len(diff) > 0:
+        diff = ",".join(diff)
+        raise ValueError("Cannot find table columns: {}".format(diff))
+
+    # getting genome sizes
+    if nproc > 1:
+        p = Pool(nproc)
+        df["Genome_size"] = p.map(_genome_size, [x for i, x in df.iterrows()])
+        p.close()
+    else:
+        df["Genome_size"] = [_genome_size(x) for i, x in df.iterrows()]
+
+    # tidy taxon names
+    df["Taxon"] = df["Taxon"].astype(str).apply(tidy_taxon_names)
+
+    return df
+
+
+def _genome_size(x):
+    """Get the total bp for the genome sequence of all genomes
+
+    Parameters
+    ----------
+    x : pd.Series
+       Series that includes 'Fasta' in the index
+    """
+    bp = 0
+    encoding = guess_type(x["Fasta"])[1]  # uses file extension
+    _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
+    with _open(x["Fasta"]) as f:
+        for i, record in enumerate(SeqIO.parse(f, "fasta")):
+            bp += len(record.seq)
+    return bp
