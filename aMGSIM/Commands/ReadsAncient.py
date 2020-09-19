@@ -963,7 +963,6 @@ def main(args):
     files = ["art_ofile_r1", "art_ofile_r2", "fragSim_ofile", "deamSim_ofile"]
 
     comm_files = list(itertools.product(comms, files))
-
     if debug is True:
         files = list(map(func, comm_files))
     else:
@@ -976,12 +975,16 @@ def main(args):
 
     read_files = {}
 
-    for i in df["comm"].unique():
-        read_files[str(i)] = (
-            df.groupby(["file_type"])[["pair", "file"]]
-            .apply(lambda x: dict(x.values))
-            .to_dict()
-        )
+    df_files = df.groupby(["comm", "file_type"])[["pair", "file"]].apply(
+        lambda x: dict(x.values)
+    )
+
+    for comm in df["comm"].unique():
+        comm = str(comm)
+        read_files[comm] = {}
+        for index, val in df_files.iteritems():
+            if comm == str(index[0]):
+                read_files[comm][index[1]] = val
 
     read_files = {
         "reads": read_files,

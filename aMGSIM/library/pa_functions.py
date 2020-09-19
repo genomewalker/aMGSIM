@@ -4,8 +4,14 @@ import difflib
 import re
 import pyranges as pr
 import Bio.Data.CodonTable
-from itertools import product
 import pandas as pd
+import logging
+import gzip
+from mimetypes import guess_type
+from functools import partial
+from pathlib import Path
+from biolib.external.prodigal import Prodigal
+from pandarallel import pandarallel
 
 
 def get_codon_table():
@@ -69,6 +75,7 @@ def get_gene_coordinates(fna):
     Get gene coordinates from the genes
     """
     df_nt = fasta_to_dataframe(fna)
+
     # df_aa = fasta_to_dataframe(faa)
     # df_genes = df_nt.merge(df_aa, on=["name", "description", "type"])
     df_nt[["Start", "End", "Strand"]] = df_nt.description.apply(get_prodigal_coords, 1)
@@ -103,7 +110,7 @@ def get_intersections(reads, genes, genome, min_len=0):
     gr.intersect_length = gr.lengths()
     # print(j.df[j.df['intersect_length'].astype(int) != j.df['length'].astype(int)])
     gr = pr.PyRanges(gr.df.drop(["Strand"], 1))
-    gr.intersect_seq = pr.get_fasta(gr, genome)
+    gr.intersect_seq = pr.get_fasta(gr, genome[0])
     gr.intersect_seq = gr.df.apply(revcomp, var="intersect_seq", axis=1)
     gr = pr.PyRanges(gr.df[gr.df["intersect_length"] >= min_len])
     return gr
@@ -114,7 +121,7 @@ def get_nondamaged_seqs(intersections, genome):
     gr = gr.rename(columns={"Start_read": "Start", "End_read": "End"})
     # gr['Start'] = gr.Start.apply(lambda x: int(x) + 1)
     gr = pr.PyRanges(gr)
-    intersections.nondamaged_seq = pr.get_fasta(gr, genome)
+    intersections.nondamaged_seq = pr.get_fasta(gr, genome[0])
     nondamaged_seq = intersections.df.apply(revcomp, var="nondamaged_seq", axis=1)
     return nondamaged_seq
 
@@ -233,57 +240,57 @@ def get_seqs_inframe(x):
     if damage != "None":
         damage = [int(i) for i in damage.split(",")]
 
-    if strand_read == "-" and strand_gene == "+":
-        intersect_seq = str(Seq.Seq(intersect_seq).reverse_complement())
-        if damage != "None":
+        if strand_read == "-" and strand_gene == "+":
+            intersect_seq = str(Seq.Seq(intersect_seq).reverse_complement())
             damage = [int(i) * -1 for i in damage]
-    elif strand_read == "+" and strand_gene == "-":
-        intersect_seq = str(Seq.Seq(intersect_seq).reverse_complement())
-        damaged_seq = str(Seq.Seq(damaged_seq).reverse_complement())
-        if damage != "None":
+        elif strand_read == "+" and strand_gene == "-":
+            intersect_seq = str(Seq.Seq(intersect_seq).reverse_complement())
+            damaged_seq = str(Seq.Seq(damaged_seq).reverse_complement())
             damage = [int(i) * -1 for i in damage]
-    # elif strand_read == '-' and strand_gene == '-':
-    #     if damage != 'None':
-    #         damage = [int(i) * -1 for i in damage ]
+        # elif strand_read == '-' and strand_gene == '-':
+        #     if damage != 'None':
+        #         damage = [int(i) * -1 for i in damage ]
 
-    intersect_seq_len = len(intersect_seq)
-    damaged_seq_len = len(damaged_seq)
-    read_len = len(nondamaged_seq)
+        intersect_seq_len = len(intersect_seq)
+        damaged_seq_len = len(damaged_seq)
+        read_len = len(nondamaged_seq)
 
-    seq_coords = re.search(intersect_seq, sequence).span()
-    coord_start = seq_coords[0]
-    coord_stop = seq_coords[1]
-    gene_len = len(sequence)
+        seq_coords = re.search(intersect_seq, sequence).span()
+        coord_start = seq_coords[0]
+        coord_stop = seq_coords[1]
+        gene_len = len(sequence)
 
-    pos = range(coord_start, coord_stop)
-    start_codon_pos = [i[1] for i in enumerate(range(0, gene_len), 0) if i[0] % 3 == 0]
-    start_codon = take_closest(positions=start_codon_pos, position=coord_start)
-    stop_codon = take_closest(positions=start_codon_pos, position=coord_stop)
-
-    if start_codon < coord_start:
-        start_codon = start_codon_pos[start_codon_pos.index(start_codon) + 1]
-
-    diff_start = start_codon - coord_start
-    end_codon_pos = max(
-        [
-            i[1]
-            for i in enumerate(range(diff_start, intersect_seq_len), 0)
-            if i[0] % 3 == 0
+        pos = range(coord_start, coord_stop)
+        start_codon_pos = [
+            i[1] for i in enumerate(range(0, gene_len), 0) if i[0] % 3 == 0
         ]
-    )
+        start_codon = take_closest(positions=start_codon_pos, position=coord_start)
+        stop_codon = take_closest(positions=start_codon_pos, position=coord_stop)
 
-    intersect_seq_inframe_nt = intersect_seq[diff_start:end_codon_pos]
-    pos = re.search(intersect_seq_inframe_nt, intersect_seq).span()
-    damaged_seq_inframe_nt = damaged_seq[pos[0] : pos[1]]
+        if start_codon < coord_start:
+            start_codon = start_codon_pos[start_codon_pos.index(start_codon) + 1]
 
-    # Translate
-    intersect_seq_inframe_aa = str(Seq.Seq(intersect_seq_inframe_nt).translate())
-    damaged_seq_inframe_aa = str(Seq.Seq(damaged_seq_inframe_nt).translate())
-    sequence_aa = str(Seq.Seq(sequence).translate())
+        diff_start = start_codon - coord_start
+        end_codon_pos = max(
+            [
+                i[1]
+                for i in enumerate(range(diff_start, intersect_seq_len), 0)
+                if i[0] % 3 == 0
+            ]
+        )
 
-    # find codons with damage
-    # Transform damage positions to positions in the coding fragment
-    if damage != "None":
+        intersect_seq_inframe_nt = intersect_seq[diff_start:end_codon_pos]
+        pos = re.search(intersect_seq_inframe_nt, intersect_seq).span()
+        damaged_seq_inframe_nt = damaged_seq[pos[0] : pos[1]]
+
+        # Translate
+        intersect_seq_inframe_aa = str(Seq.Seq(intersect_seq_inframe_nt).translate())
+        damaged_seq_inframe_aa = str(Seq.Seq(damaged_seq_inframe_nt).translate())
+        sequence_aa = str(Seq.Seq(sequence).translate())
+
+        # find codons with damage
+        # Transform damage positions to positions in the coding fragment
+
         if strand_read == "-":
             cstart = abs(end_read - end) + diff_start
         else:
@@ -321,40 +328,168 @@ def get_seqs_inframe(x):
                 )
             )
         x["damage_codon_diffs"] = ",".join(codons)
-    else:
-        x["damage_codon_diffs"] = None
+        x["damage_inframe_ag"] = ",".join(map(str, c2t))
+        x["damage_inframe_ct"] = ",".join(map(str, a2g))
 
-    if intersect_seq_inframe_aa == damaged_seq_inframe_aa:
-        x["damage_aaseq_diffs"] = None
-    else:
-        positions = list(
-            map(
-                str,
-                [
-                    i
-                    for i in range(len(intersect_seq_inframe_aa))
-                    if intersect_seq_inframe_aa[i] != damaged_seq_inframe_aa[i]
-                ],
+        if intersect_seq_inframe_aa == damaged_seq_inframe_aa:
+            x["damage_aaseq_diffs"] = None
+        else:
+            positions = list(
+                map(
+                    str,
+                    [
+                        i
+                        for i in range(len(intersect_seq_inframe_aa))
+                        if intersect_seq_inframe_aa[i] != damaged_seq_inframe_aa[i]
+                    ],
+                )
             )
-        )
-        diff = list(
-            map(
-                str,
-                [
-                    intersect_seq_inframe_aa[i] + ">" + damaged_seq_inframe_aa[i]
-                    for i in range(len(intersect_seq_inframe_aa))
-                    if intersect_seq_inframe_aa[i] != damaged_seq_inframe_aa[i]
-                ],
+            diff = list(
+                map(
+                    str,
+                    [
+                        intersect_seq_inframe_aa[i] + ">" + damaged_seq_inframe_aa[i]
+                        for i in range(len(intersect_seq_inframe_aa))
+                        if intersect_seq_inframe_aa[i] != damaged_seq_inframe_aa[i]
+                    ],
+                )
             )
-        )
-        x["damage_aaseq_diffs"] = ",".join(
-            [x + ":" + y for x, y in zip(positions, diff)]
-        )
+            x["damage_aaseq_diffs"] = ",".join(
+                [x + ":" + y for x, y in zip(positions, diff)]
+            )
 
-    x["intersect_seq_inframe_nt"] = intersect_seq_inframe_nt
-    x["damaged_seq_inframe_nt"] = damaged_seq_inframe_nt
-    x["intersect_seq_inframe_aa"] = intersect_seq_inframe_aa
-    x["damaged_seq_inframe_aa"] = damaged_seq_inframe_aa
-    x["sequence_aa"] = sequence_aa
+        x["intersect_seq_inframe_nt"] = intersect_seq_inframe_nt
+        x["damaged_seq_inframe_nt"] = damaged_seq_inframe_nt
+        x["intersect_seq_inframe_aa"] = intersect_seq_inframe_aa
+        x["damaged_seq_inframe_aa"] = damaged_seq_inframe_aa
+        x["sequence_aa"] = sequence_aa
 
     return x
+
+
+def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
+    pandarallel.initialize(nb_workers=nproc, progress_bar=False, verbose=False)
+
+    comm = x[0]
+    genome = x[1]
+
+    deam_file = files["reads"][comm]["deamSim_ofile"]["SR"]
+    fragsim_file = files["reads"][comm]["fragSim_ofile"]["SR"]
+    fasta_file = [s for s in files["genomes"] if genome in s]
+
+    # Genes
+    faa = gene_predictions[genome]["faa"]
+    fna = gene_predictions[genome]["fna"]
+    translation_table = gene_predictions[genome]["translation_table"]
+
+    recs = []
+    encoding = guess_type(deam_file)[1]  # uses file extension
+    _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
+
+    pattern = re.compile("(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)")
+    with _open(deam_file) as f:
+        records = enumerate(SeqIO.parse(f, "fasta"))
+        recs = get_headers(records=records, pattern=pattern)
+        df = pd.DataFrame(recs)
+    if debug:
+        logging.info("Reading reads...")
+
+    # Get reads
+    df_reads = pr.PyRanges(df)
+
+    if df_reads.df["Chromosome"].str.contains(genome).any():
+        if debug:
+            logging.info("Reading genes...")
+        # Get genes info
+        genes = get_gene_coordinates(fna=fna)
+        # Get intersections
+        # Will rop intersects that are too short for coding AAs
+        if debug:
+            logging.info("Finding read-gene intersections...")
+
+        r2g_intersections = get_intersections(
+            reads=df_reads, genes=genes, genome=fasta_file, min_len=min_len
+        )
+        names = {
+            "Start_b": "Start_gene",
+            "End_b": "End_gene",
+            "Strand": "Strand_gene",
+        }
+        r2g_intersections = r2g_intersections.join(
+            genes.drop("type"), report_overlap=True
+        )
+        r2g_intersections = pr.PyRanges(
+            r2g_intersections.df[
+                r2g_intersections.df["Overlap"]
+                == r2g_intersections.df["intersect_length"]
+            ].rename(columns=names)
+        )
+        r2g_intersections_df = r2g_intersections.df
+        gn = r2g_intersections_df["Name"]
+        read_multi_span = r2g_intersections_df[
+            gn.isin(gn[gn.duplicated()])
+        ].sort_values("Name")
+        # len(read_multi_span.index)
+        if debug:
+            logging.info("Retrieving non-damaged sequences from intersections...")
+        # Get sequence from interval
+        r2g_intersections.nondamaged_seq = get_nondamaged_seqs(
+            intersections=r2g_intersections, genome=fasta_file
+        )
+        if debug:
+            logging.info("Retrieving damaged sequences from intersections...")
+        r2g_intersections = get_damaged_seqs(
+            intersections=r2g_intersections, deam_file=deam_file
+        )
+
+        r2g_intersections.damage_intersection = r2g_intersections.df.parallel_apply(
+            find_damage, axis=1
+        )
+        if debug:
+            logging.info("Retrieving damaged codons from genes...")
+        aa_damage = r2g_intersections.df.merge(
+            fasta_to_dataframe(fna)[["name", "sequence"]].rename(
+                columns={"name": "gene_name"}
+            )
+        ).parallel_apply(get_seqs_inframe, axis=1)
+        aa_damage = aa_damage.reset_index()
+        aa_damage["community"] = comm
+
+        aa_damage = aa_damage[~aa_damage.damage_codon_diffs.isnull()].reset_index()
+        aa_damage = aa_damage.rename(
+            columns={"Name": "read_name", "Chromosome": "chromosome"}
+        )
+
+        out_suffix = ".tsv.gz"
+
+        fname = "{}---{}_aa-damage".format(comm, genome)
+        outfile = Path(outdir, fname).with_suffix(out_suffix)
+        columns = [
+            "community",
+            "read_name",
+            "gene_name",
+            "chromosome",
+            "damage",
+            "damage_intersection",
+            "damage_inframe_ct",
+            "damage_inframe_ag",
+            "damage_aaseq_diffs",
+            "damage_codon_diffs",
+            "intersect_seq",
+            "intersect_seq_inframe_aa",
+            "intersect_seq_inframe_nt",
+            "damaged_seq",
+            "damaged_seq_inframe_aa",
+            "damaged_seq_inframe_nt",
+        ]
+        aa_damage[columns].to_csv(
+            path_or_buf=outfile,
+            sep="\t",
+            header=True,
+            index=False,
+            compression="gzip",
+        )
+        return outfile
+    else:
+        if debug:
+            print("Genome {} not found in sample".format(genome))
