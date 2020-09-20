@@ -255,13 +255,13 @@ def run_art(exe, params, seqSys, fasta, ofile, read_len, library, debug):
         sys.stderr.write(res.stdout.decode() + "\n")
 
 
-def run_deamSim(exe, params, ofile, fasta, library, debug):
+def run_deamSim(exe, params, ofile, fasta, libprep, debug):
 
     parms = process_params(params)
 
-    if library == "pe" and params["-mapdamage"]:
+    if libprep == "double" and params["-mapdamage"]:
         cmd = "{exe} {params} double -o {ofile} -name {fasta}"
-    elif library == "se" and params["-mapdamage"]:
+    elif libprep == "single" and params["-mapdamage"]:
         cmd = "{exe} {params} single -o {ofile} -name {fasta}"
     else:
         cmd = "{exe} {params} -o {ofile} -name {fasta}"
@@ -403,6 +403,7 @@ def generate_fragments(
     adptSim_params,
     art_exe,
     art_params,
+    libprep,
     tmp_dir,
     exp_data,
     debug,
@@ -443,7 +444,7 @@ def generate_fragments(
                 params=deamSim_params,
                 ofile=frag_data["deamSim_ofile"],
                 fasta=frag_data["fragSim_ofile"],
-                library=library,
+                libprep=libprep,
                 debug=debug,
             )
             # Regex to parse deamSim headers: (\S+):([+-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?
@@ -545,7 +546,7 @@ def generate_fragments(
             params=deamSim_params,
             ofile=frag_data["deamSim_ofile"],
             fasta=frag_data["fragSim_ofile"],
-            library=library,
+            libprep=libprep,
             debug=debug,
         )
         run_adptSim(
@@ -890,6 +891,7 @@ def main(args):
     deamSim_params = config["deamSim"]
     adptSim_params = config["adptSim"]
     art_params = config["art"]
+    libprep = config_params["libprep"]
 
     # Create folders
     tmp_dir = config_params["tmp_dir"]
@@ -927,6 +929,7 @@ def main(args):
         adptSim_params=adptSim_params,
         art_exe=config_params["art"],
         art_params=art_params,
+        libprep=libprep,
         tmp_dir=tmp_dir,
         debug=debug,
         genome_table=genome_table,

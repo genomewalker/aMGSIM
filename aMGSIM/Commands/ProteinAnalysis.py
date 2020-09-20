@@ -246,10 +246,11 @@ def main(args):
             )
         )
     logging.info("Combining files...")
-    p_procs = nproc * ncpu
+    p_procs =   nproc * ncpu
 
     if p_procs > len(comms):
         p_procs = len(comms)
+        
     func = partial(combine_files, tmp_damage=tmp_damage, out_dir=out_dir)
     if debug is True:
         ofiles = list(map(func, comms))

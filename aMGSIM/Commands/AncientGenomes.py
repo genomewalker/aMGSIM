@@ -87,6 +87,7 @@ def process_genome(
     coverage,
     library,
     selected_genomes,
+    genome_comp,
     n_reads,
 ):
     genome = Genome(
@@ -100,6 +101,7 @@ def process_genome(
         library=library,
         # seqSys=seqSys,
         selected_genomes=selected_genomes,
+        genome_comp=genome_comp,
         n_reads=n_reads,
     )
     return genome
@@ -113,6 +115,7 @@ class Genome:
         mode_len_ancient,
         mode_len_modern,
         selected_genomes,
+        genome_comp,
         min_len,
         max_len,
         coverage,
@@ -138,22 +141,36 @@ class Genome:
         selected_genomes_filt = selected_genomes[
             (selected_genomes["Community"] == self.comm)
             & (selected_genomes["Taxon"] == self.taxon)
-        ]
+        ].copy()
 
+        selected_genomes_filt["onlyAncient"].replace(
+            {"None": None, "True": True, "False": False}, inplace=True
+        )
+        taxons = genome_comp[
+            (genome_comp["Taxon"] == self.taxon)
+            & (genome_comp["Community"] == self.comm)
+        ]
         # Is onlyAncient, mix or only moders
         if len(selected_genomes_filt.index) > 0:
-            self.onlyAncient = bool(selected_genomes_filt.iloc[0]["onlyAncient"])
+            self.onlyAncient = selected_genomes_filt.iloc[0]["onlyAncient"]
         else:
             self.onlyAncient = None
-
         # If it is not modern get the coverage
-        if self.onlyAncient is not None:
-            # min_cov = coverage['min']
-            # max_cov = coverage['max']
+
+        if taxons.empty:
+            if self.onlyAncient is not None:
+                coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
+        else:
             coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
         # Get fragments
         # Get average size
-        if self.onlyAncient == True:
+        if str(self.onlyAncient) != "None":
+            self.onlyAncient = bool(self.onlyAncient)
+        else:
+            self.onlyAncient = None
+        
+        if self.onlyAncient is True:
+            self.onlyAncient = True
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
                 max_len=max_len,
@@ -178,8 +195,12 @@ class Genome:
                 (coverage_ancient * self.genome_size) / read_length_ancient
             )
 
-            seq_depth_ancient_original = seq_depth_ancient
-            seq_depth_ancient = seq_depth
+            if taxons.empty:
+                seq_depth_ancient_original = seq_depth_ancient
+                seq_depth_ancient = seq_depth
+            else:
+                seq_depth_ancient_original = seq_depth_ancient
+                seq_depth = seq_depth_ancient
 
             fold_ancient = (seq_depth_ancient * read_length_ancient) / self.genome_size
 
@@ -190,6 +211,10 @@ class Genome:
                 ] = seq_depth_ancient_original
                 self.fragments_ancient["fold"] = fold_ancient
                 self.fragments_ancient["fold_original"] = coverage_ancient
+                if taxons.empty:
+                    self.coverage_enforced = False
+                else:
+                    self.coverage_enforced = True
             else:
                 self.fragments_ancient = None
 
@@ -210,19 +235,29 @@ class Genome:
                 paired = 2
 
             read_length_modern = int(self.fragments_modern["avg_len"] * paired)
-
             # Number max of reads genome in sample
-            seq_depth_modern = int(n_reads * ((self.rel_abund / 100)))
-            fold_modern = (seq_depth_modern * read_length_modern) / self.genome_size
+            if taxons.empty:
+                seq_depth_modern = int(n_reads * ((self.rel_abund / 100)))
+                fold_modern = (seq_depth_modern * read_length_modern) / self.genome_size
+            else:
+                seq_depth_modern = int(
+                    (coverage_ancient * self.genome_size) / read_length_modern
+                )
+                fold_modern = (seq_depth_modern * read_length_modern) / self.genome_size
 
             if seq_depth_modern > 0:
                 self.fragments_modern["seq_depth"] = seq_depth_modern
                 self.fragments_modern["fold"] = fold_modern
             else:
                 self.fragments_modern = None
+            if taxons.empty:
+                self.coverage_enforced = False
+            else:
+                self.coverage_enforced = True
             self.seq_depth = seq_depth_modern
 
         else:
+            self.onlyAncient = False
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
                 max_len=max_len,
@@ -335,6 +370,9 @@ def select_genomes(self, parms):
     cov_max = coverage["max"]
     read_len = parms["read_len"]
     rank_cutoff = parms["rank_cutoff"]
+    genome_comp = parms["genome_comp"].rename(columns={"Coverage": "coverage_ancient"})
+    comm = self["Community"]
+    genome_comp = genome_comp.merge(self)[["Taxon", "coverage_ancient", "onlyAncient"]]
 
     if library == "se":
         paired = 1
@@ -345,17 +383,45 @@ def select_genomes(self, parms):
 
     min_cov = coverage["min"]
     max_cov = coverage["max"]
+    if genome_comp.empty:
+        k = int(round(prop * self.shape[0]))
+        k_filt = 0
+    else:
+        k = int(genome_comp.shape[0])
+        k_filt = 0
+    if k > 0:
+        while k_filt < k:
+            rnd_seed = int(np.random.RandomState().randint(0, 99999, size=1))
+            np.random.seed(rnd_seed)
 
-    k = int(round(prop * self.shape[0]))
-    k_filt = 0
+            coverage_ancient = np.round(
+                np.random.uniform(min_cov, max_cov, size=self.shape[0]), 1
+            )
 
-    while k_filt <= k:
+            self["seq_depth"] = n_reads * (self["Perc_rel_abund"] / 100)
+            self["seq_depth"] = self["seq_depth"].astype(int)
+            self["max_ancient_cov_allowed"] = (
+                self["seq_depth"] * read_length_ancient
+            ) / self["Genome_size"]
+            self["coverage_ancient"] = coverage_ancient.tolist()
+            self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
+            if genome_comp.empty:
+                # self['Rank_perd'] = self['Rank']/self['Rank'].max()
+                self.loc[
+                    (self["Rank"] / self["Rank"].max()) <= rank_cutoff, "onlyAncient"
+                ] = bool(False)
+            self.set_index("Taxon", inplace=True)
+            self.update(genome_comp.set_index("Taxon"))
+            self.reset_index(level=0, inplace=True)
+            withAncient = self[(self["onlyAncient"].notnull())]
+            k_filt = withAncient.shape[0]
+    else:
         rnd_seed = int(np.random.RandomState().randint(0, 99999, size=1))
         np.random.seed(rnd_seed)
-
         coverage_ancient = np.round(
             np.random.uniform(min_cov, max_cov, size=self.shape[0]), 1
         )
+
         self["seq_depth"] = n_reads * (self["Perc_rel_abund"] / 100)
         self["seq_depth"] = self["seq_depth"].astype(int)
         self["max_ancient_cov_allowed"] = (
@@ -364,24 +430,35 @@ def select_genomes(self, parms):
         self["coverage_ancient"] = coverage_ancient.tolist()
         self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
         # self['Rank_perd'] = self['Rank']/self['Rank'].max()
-        self.loc[
-            (self["Rank"] / self["Rank"].max()) <= rank_cutoff, "onlyAncient"
-        ] = bool(False)
+        if genome_comp.empty:
+            self.loc[
+                (self["Rank"] / self["Rank"].max()) <= rank_cutoff, "onlyAncient"
+            ] = bool(False)
+        self.set_index("Taxon", inplace=True)
+        self.update(genome_comp.set_index("Taxon"))
+        self.reset_index(level=0, inplace=True)
         withAncient = self[(self["onlyAncient"].notnull())]
         k_filt = withAncient.shape[0]
+
     pop = withAncient["Taxon"].tolist()
     # Estimate max number of reads as function of coverage and rel abun
 
     # Number max of reads genome in sample
-
     w = pd.DataFrame(withAncient["Perc_rel_abund"].apply(lambda x: np.arcsinh(100 - x)))
     max_w = w["Perc_rel_abund"].sum()
     w = w["Perc_rel_abund"].apply(lambda x: x / max_w)
 
-    random_genomes = np.random.choice(pop, replace=False, p=w, size=k)
+    if genome_comp.empty:
+        random_genomes = np.random.choice(pop, replace=False, p=w, size=k)
+        self.loc[~self["Taxon"].isin(random_genomes), "onlyAncient"] = None
+    else:
+        random_genomes = genome_comp["Taxon"].to_list()
+        self["onlyAncient"] = str(self["onlyAncient"])
+        self["onlyAncient"].replace(
+            {"None": None, "True": True, "False": False}, inplace=True
+        )
 
     # random_genomes = withAncient[withAncient['Taxon'].isin(random_genomes)].copy()
-    self.loc[~self["Taxon"].isin(random_genomes), "onlyAncient"] = None
     self.loc[~self["Taxon"].isin(random_genomes), "coverage_ancient"] = 0
     self.loc[self["onlyAncient"].isin([True]), "coverage_ancient"] = self[
         "max_ancient_cov_allowed"
@@ -449,14 +526,20 @@ def refine_abundances(data, n_reads):
                 & (df["taxon"] == p.taxon)
                 & (df["frag_type"] == "ancient")
             ]
-            p.fragments_ancient["seq_depth"] = int(df_sub["seq_depth_rounded"].values)
+            if p.coverage_enforced is not True:
+                p.fragments_ancient["seq_depth"] = int(
+                    df_sub["seq_depth_rounded"].values
+                )
         if p.fragments_modern is not None:
             df_sub = df.loc[
                 (df["comm"] == str(p.comm))
                 & (df["taxon"] == p.taxon)
                 & (df["frag_type"] == "modern")
             ]
-            p.fragments_modern["seq_depth"] = int(df_sub["seq_depth_rounded"].values)
+            if p.coverage_enforced is not True:
+                p.fragments_modern["seq_depth"] = int(
+                    df_sub["seq_depth_rounded"].values
+                )
 
         seq_depth = df_taxo.loc[
             (df_taxo["comm"] == str(p.comm)) & (df_taxo["taxon"] == p.taxon)
@@ -517,17 +600,22 @@ def main(args):
     )
 
     # Test that both genome composition of abundance table are given
-    if config["abund_table"] and config["genome_comp"]:
+    if not config["abund_table"] and not config["genome_comp"]:
         raise IOError(
-            "You cannot provide an abundance table and genome composition table at the same time."
+            "You need to provide an abundance table and/or genome composition table"
         )
 
-    if config["abund_table"]:
+    if config["abund_table"] and not config["genome_comp"]:
         abund_table = config["abund_table"]
+        genome_comp = False
         filename = abund_table
-    elif config["genome_comp"]:
+    elif config["genome_comp"] and not config["abund_table"]:
         genome_comp = config["genome_comp"]
         filename = genome_comp
+    else:
+        genome_comp = config["genome_comp"]
+        abund_table = config["abund_table"]
+        filename = abund_table
 
     if config["single"] is True:
         library = "se"
@@ -565,8 +653,16 @@ def main(args):
         )
 
     # load tables
+    logging.info("Loading abundace table...")
     abund_table = SimReads.load_abund_table(abund_table)
+
+    logging.info("Loading abundace genomes...")
     genome_table = f.load_genome_table(config["genome_table"])
+
+    if genome_comp:
+        logging.info("Loading genome composition table...")
+        genome_comp = pd.read_csv(genome_comp, sep="\t")
+
     df = abund_table.merge(genome_table, on=["Taxon"])
     genomes = df.values.tolist()
     # We need to add to the taxon the proportion of ancient
@@ -587,6 +683,7 @@ def main(args):
         "mode_len_ancient": mode_len_ancient,
         "read_len": read_len,
         "rank_cutoff": 0.1,
+        "genome_comp": genome_comp,
     }
     selected_genomes = applyParallel(
         grouped, func=select_genomes, nproc=nproc, parms=parms
@@ -610,6 +707,7 @@ def main(args):
         # seqSys=seqSys,
         selected_genomes=selected_genomes,
         n_reads=n_reads,
+        genome_comp=genome_comp,
     )
 
     if debug is True:
@@ -625,7 +723,6 @@ def main(args):
     dir_name = Path(filename.name).parent
 
     logging.info("Refinning read abundances...")
-
     ancient_genomes = {}
     ancient_genomes["data"] = refine_abundances(ancient_genomes_data, n_reads=n_reads)
     # ancient_genomes["data"] = ancient_genomes_data

@@ -106,7 +106,7 @@ ag_schema_config = {
     ),
     Optional("prop-ancient-comm", default=0.1): Or(
         None,
-        And(Use(float), lambda n: 0 < n < 1),
+        And(Use(float), lambda n: 0 <= n < 1),
         error="Proportion should be a float 0 < p < 1",
     ),
     Optional("min-length", default=30): Or(
@@ -182,6 +182,11 @@ ar_schema_config = {
             str,
             lambda x: shutil.which(x) is not None,
             error="art_illumina executable not found",
+        ),
+        "libprep": And(
+            str,
+            lambda x: x in ["single", "double"],
+            error="Lib prep has to be single or double",
         ),
         # Optional('seq_depth', default=1e-5): Or(None, And(Use(float), lambda x: x > 0),
         #                                         error='Sequencing depth has to be larger than 0'),
