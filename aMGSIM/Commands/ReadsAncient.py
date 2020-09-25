@@ -66,7 +66,7 @@ from multiprocessing import Pool
 from schema import Schema, And, Optional, Or, Use, SchemaError
 
 # application
-from aMGSIM import SimReadsAncient
+# from aMGSIM import SimReadsAncient
 from MGSIM import SimReads
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f

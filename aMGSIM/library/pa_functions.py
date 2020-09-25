@@ -471,7 +471,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
             aa_damage = aa_damage.reset_index()
             aa_damage["community"] = comm
 
-            aa_damage = aa_damage[~aa_damage.damage_codon_diffs.isnull()].reset_index()
+            # aa_damage = aa_damage[~aa_damage.damage_codon_diffs.isnull()].reset_index()
             aa_damage = aa_damage.rename(
                 columns={"Name": "read_name", "Chromosome": "chromosome"}
             )
