@@ -891,6 +891,8 @@ def main(args):
     deamSim_params = config["deamSim"]
     adptSim_params = config["adptSim"]
     art_params = config["art"]
+    adptRem_params = config["AdapterRemoval"]
+
     libprep = config_params["libprep"]
 
     # Create folders
@@ -927,6 +929,8 @@ def main(args):
         deamSim_params=deamSim_params,
         adptSim_exe=config_params["adptSim"],
         adptSim_params=adptSim_params,
+        adptRem_exe=config_params["AdapterRemoval"],
+        adptRem_params=adptRem_params,
         art_exe=config_params["art"],
         art_params=art_params,
         libprep=libprep,

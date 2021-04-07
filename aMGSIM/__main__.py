@@ -11,10 +11,7 @@ from docopt import docopt
 # import Utils
 ## application
 from MGSIM.Commands import Communities
-from MGSIM.Commands import Genome_download
-from MGSIM.Commands import Genome_rename
 from aMGSIM.Commands import AncientGenomes
-from aMGSIM.Commands import SingleAncientGenome
 from aMGSIM.Commands import ReadsAncient
 from aMGSIM.Commands import ProteinAnalysis
 
@@ -25,7 +22,7 @@ def main(args=None):
         args = sys.argv[1:]
 
     docs = """
-MGSIM: simulate ancient metagenomes for multiple synthetic communities
+aMGSIM: simulate ancient metagenomes for multiple synthetic communities
 
 Usage:
   aMGSIM <command> [<args>...]
@@ -50,17 +47,15 @@ Description:
     # dict of all subcommands
     cmds = {
         "communities": Communities,
-        "genome-download": Genome_download,
-        "genome-rename": Genome_rename,
-        "ancient-reads": ReadsAncient,
         "ancient-genomes": AncientGenomes,
+        "ancient-reads": ReadsAncient,
         "protein-analysis": ProteinAnalysis,
     }
 
     # list subcommands
     if args["--list"]:
-        cmd_list = "\n".join(sorted(cmds.keys(), key=str.lower))
-        print("#-- Commands --#")
+        cmd_list = " | ".join(cmds.keys())
+        print("Available Commands:")
         print(cmd_list)
         exit()
 

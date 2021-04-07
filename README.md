@@ -3,7 +3,7 @@
 aMGSIM
 =====
 
-This is an extension of [MGSIM](https://github.com/nick-youngblut/MGSIM/) to create ancient metagenome read simulation of multiple synthetic communities. It integrates the methods in [Gargammel](https://github.com/grenaud/gargammel) and provides flexibility to create different experimental scenarios.
+This is an extension of [MGSIM](https://github.com/nick-youngblut/MGSIM/) to create ancient metagenome read simulation of multiple synthetic communities. It integrates the methods in [Gargammel](https://github.com/grenaud/gargammel) and provides flexibility to create different experimental scenarios. Furthermore, a
 
 ## Sections
 
@@ -71,3 +71,27 @@ See all subcommands:
 See [LICENSE](./LICENSE)
 
 
+
+# HOw to run
+
+First we need to generate a synthetic community using:
+```
+aMGSIM communities  --n-comm 5 /genome_table.tsv test
+```
+
+where `genome_table.tsv` contains:
+```
+    * "Taxon" = taxon name
+    * "Fasta" = genome fasta file path
+```
+
+```
+aMGSIM ancient-genomes  ag-config.yaml
+aMGSIM ancient-genomes  ag-config.yaml
+```
+
+We need a file that specifies 
+
+```
+
+```

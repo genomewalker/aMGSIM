@@ -183,6 +183,11 @@ ar_schema_config = {
             lambda x: shutil.which(x) is not None,
             error="art_illumina executable not found",
         ),
+        "AdapterRemoval": And(
+            str,
+            lambda x: shutil.which(x) is not None,
+            error="AdapterRemoval executable not found",
+        ),
         "libprep": And(
             str,
             lambda x: x in ["single", "double"],
@@ -204,7 +209,7 @@ ar_schema_config = {
         ): And(Use(str)),
         Optional("cpus", default=1): Or(
             None,
-            And(Use(int), lambda n: 0 < n < cpu_count() - 1),
+            And(Use(int), lambda n: 0 <= n < cpu_count()),
             error="Number of CPUs should be integer between 0 < N < {}".format(
                 cpu_count() - 1
             ),
@@ -279,65 +284,44 @@ ar_schema_config = {
             error="Problem finding the second-read quality profile",
         ),
     },
+    And("AdapterRemoval"): {
+        Optional("--adapter1", default=FWD_ADPT): And(
+            And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
+            error="Forward adapter is not a valid sequence",
+        ),
+        Optional("--adapter2", default=REV_ADPT): And(
+            And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
+            error="Reverse adapter is not a valid sequence",
+        ),
+        Optional("--minlength", default=30): Or(
+            None,
+            And(Use(int), lambda n: 0 <= n),
+            error="Minimum read length should be larger than 0",
+        ),
+        Optional("--trimns", default=True): And(
+            bool, error="The key trimns should be True/False"
+        ),
+        Optional("--collapse", default=True): And(
+            bool, error="The key collapse should be True/False"
+        ),
+        Optional("--trimqualities", default=True): And(
+            bool, error="The key trimqualities should be True/False"
+        ),
+        Optional("--minquality", default=20): Or(
+            None,
+            And(Use(int), lambda n: 0 <= n),
+            error="Minimum read quality value should be larger than 0",
+        ),
+        Optional("--minadapteroverlap", default=30): Or(
+            None,
+            And(Use(int), lambda n: 0 < n),
+            error="Minimum overlap length should be larger or equal than 0",
+        ),
+        Optional("--preserve5p", default=True): And(
+            bool, error="The key preserve5p should be True/False"
+        ),
+    },
 }
-
-seq = Seq("ATGCGTGCAT")
-record = SeqRecord(seq, id="test", annotations={"molecule_type": "DNA"})
-
-default_config = {
-    "art_exe": "art_illumina",
-    # Path to the fragSim binary
-    "fragSim": "fragSim",
-    # Path to the deamSim binary
-    "deamSim": "deamSim",
-    # Path to the adptSim binary
-    "adptSim": "adptSim",
-    # Sequencing depth
-    "seq_depth": 1e5,
-    # Temporary folder
-    "tmp_dir": ".sim_reads",
-    # Number of cpus
-    "cpus": 1,
-    # Output dir
-    "output_dir": "test_out",
-}
-
-default_art_config = {
-    "paired": True,
-    "read_length": 150,
-    "amplicon": True,
-    "rndSeed": 12345,
-    "seqSys": "HS25",
-}
-
-
-default_fragSim_config = {
-    "comp": False,  # [file] Base composition for the fragments (default none)
-    # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
-    "dist": False,
-    # Do not reverse complement (default: rev. comp half of seqs.)
-    "norev": False,
-    # Do not set the sequence to upper-case (default: uppercase the seqs.)
-    "case": False,
-    # We define for each sample max/min
-    # [file] Open file with min/max read lengths in the following format: sample[TAB]min_length[TAB]max_length
-    "fragment_length_file": False,
-    # [length] Generate fragments of fixed length for all samples (default: 20)
-    "default_fragment_length": 60,
-    # [file] Open file with lognormal location/scale following format: sample[TAB]length[TAB]freq
-    "frag_distribution_file": False,
-    # [file] Open file with size frequency in the following format: sample[TAB]lognorm_location[TAB]lognorm_scale
-    "frag_lognormal_distribution_file": False,
-    # [float] Location for lognormal distribution (default none)
-    "default_loc": False,
-    # [float] Scale for lognormal distribution      (default none)
-    "default_scale": False,
-    "gc": False,  # [float] Use GC bias factor  (default: 0)
-    # [file] Open file with size distribution (one fragment length per line)
-    "s_ancient": False,
-}
-
-default_deamSim_config = {"mapdamage": False, "damage": False}
 
 seqSys_props = {
     "GA2": {"se": 50, "pe": 75},

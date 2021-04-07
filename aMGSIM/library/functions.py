@@ -317,7 +317,6 @@ def load_genome_table(in_file, nproc=1):
 
     # tidy taxon names
     df["Taxon"] = df["Taxon"].astype(str).apply(tidy_taxon_names)
-
     return df
 
 

@@ -42,7 +42,7 @@ from multiprocessing import Pool
 import numpy as np
 import json
 from pathlib import Path
-import sys
+import sys, os
 
 # application
 from MGSIM import SimReads
@@ -127,11 +127,11 @@ class Genome:
         # Community, Taxon, Perc_rel_abund, Rank, Fasta, Genome_size
         rnd_seed = int(np.random.RandomState().randint(0, 99999, size=1))
         np.random.seed(rnd_seed)
-
+        # ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
         self.comm = genome[0]
         self.taxon = genome[1]
-        self.rel_abund = genome[2]
-        self.genome_size = genome[5]
+        self.rel_abund = genome[3]
+        self.genome_size = genome[4]
         # self.library = library
         # self.read_length = max_len
         # self.seqSys = seqSys
@@ -143,33 +143,39 @@ class Genome:
             & (selected_genomes["Taxon"] == self.taxon)
         ].copy()
 
-        selected_genomes_filt["onlyAncient"].replace(
-            {"None": None, "True": True, "False": False}, inplace=True
-        )
+        # selected_genomes_filt["onlyAncient"].replace(
+        #     {"None": None, "True": True, "False": False}, inplace=True
+        # )
+
         taxons = genome_comp[
             (genome_comp["Taxon"] == self.taxon)
             & (genome_comp["Community"] == self.comm)
         ]
-        # Is onlyAncient, mix or only moders
-        if len(selected_genomes_filt.index) > 0:
-            self.onlyAncient = selected_genomes_filt.iloc[0]["onlyAncient"]
-        else:
-            self.onlyAncient = None
-        # If it is not modern get the coverage
 
-        if taxons.empty:
-            if self.onlyAncient is not None:
-                coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
-        else:
-            coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
+        # Is onlyAncient, mix or only moders
+        # if len(selected_genomes_filt.index) > 0:
+        #     self.onlyAncient = selected_genomes_filt.iloc[0]["onlyAncient"]
+        # else:
+        #     self.onlyAncient = None
+        # If it is not modern get the coverage
+        self.onlyAncient = selected_genomes_filt.iloc[0]["onlyAncient"]
+        print(self.onlyAncient)
+        # if taxons.empty:
+        #     if self.onlyAncient is not None:
+        #         coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
+        # else:
+        #     coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
         # Get fragments
         # Get average size
-        if str(self.onlyAncient) != "None":
-            self.onlyAncient = bool(self.onlyAncient)
-        else:
-            self.onlyAncient = None
-        
+        coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
+
+        # if str(self.onlyAncient) != "None":
+        #     self.onlyAncient = bool(self.onlyAncient)
+        # else:
+        #     self.onlyAncient = None
+
         if self.onlyAncient is True:
+            print("I am TRUE")
             self.onlyAncient = True
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
@@ -221,6 +227,7 @@ class Genome:
             self.seq_depth = seq_depth
 
         elif self.onlyAncient is None:
+            print("I am NONE")
             self.fragments_ancient = None
             self.fragments_modern = self.random_fragments(
                 min_len=min_len,
@@ -257,6 +264,7 @@ class Genome:
             self.seq_depth = seq_depth_modern
 
         else:
+            print("I am FALSE")
             self.onlyAncient = False
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
@@ -305,6 +313,11 @@ class Genome:
                 self.fragments_modern["fold"] = fold_modern
             else:
                 self.fragments_modern = None
+
+            if taxons.empty:
+                self.coverage_enforced = False
+            else:
+                self.coverage_enforced = True
             self.seq_depth = seq_depth
 
     def random_fragments(self, min_len, max_len, dist, mode_len, rnd_seed):
@@ -370,8 +383,10 @@ def select_genomes(self, parms):
     cov_max = coverage["max"]
     read_len = parms["read_len"]
     rank_cutoff = parms["rank_cutoff"]
-    genome_comp = parms["genome_comp"].rename(columns={"Coverage": "coverage_ancient"})
     comm = self["Community"]
+    genome_comp = parms["genome_comp"]
+
+    # we identify which genomes should have a specific ancient content in each commmunity
     genome_comp = genome_comp.merge(self)[["Taxon", "coverage_ancient", "onlyAncient"]]
 
     if library == "se":
@@ -379,16 +394,20 @@ def select_genomes(self, parms):
     else:
         paired = 2
 
+    # Estimate the ancient read length
     read_length_ancient = mode_len_ancient * paired
 
+    # Get max and min coverage values
     min_cov = coverage["min"]
     max_cov = coverage["max"]
-    if genome_comp.empty:
-        k = int(round(prop * self.shape[0]))
-        k_filt = 0
-    else:
-        k = int(genome_comp.shape[0])
-        k_filt = 0
+
+    # How many genomes we want to use
+    # If not defined it will randomly pick some based on how many of them we want
+    # to have in each community
+    # Genome comp file defines spike-in taxa to be ancient with specific coverage
+    k = int(round(prop * self.shape[0]))
+    k_filt = 0
+
     if k > 0:
         while k_filt < k:
             rnd_seed = int(np.random.RandomState().randint(0, 99999, size=1))
@@ -403,16 +422,21 @@ def select_genomes(self, parms):
             self["max_ancient_cov_allowed"] = (
                 self["seq_depth"] * read_length_ancient
             ) / self["Genome_size"]
+
             self["coverage_ancient"] = coverage_ancient.tolist()
             self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
+            self["onlyAncient"] = self["onlyAncient"].astype(str)
+
             if genome_comp.empty:
                 # self['Rank_perd'] = self['Rank']/self['Rank'].max()
                 self.loc[
                     (self["Rank"] / self["Rank"].max()) <= rank_cutoff, "onlyAncient"
                 ] = bool(False)
+
             self.set_index("Taxon", inplace=True)
             self.update(genome_comp.set_index("Taxon"))
             self.reset_index(level=0, inplace=True)
+
             withAncient = self[(self["onlyAncient"].notnull())]
             k_filt = withAncient.shape[0]
     else:
@@ -429,6 +453,7 @@ def select_genomes(self, parms):
         ) / self["Genome_size"]
         self["coverage_ancient"] = coverage_ancient.tolist()
         self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
+
         # self['Rank_perd'] = self['Rank']/self['Rank'].max()
         if genome_comp.empty:
             self.loc[
@@ -453,16 +478,22 @@ def select_genomes(self, parms):
         self.loc[~self["Taxon"].isin(random_genomes), "onlyAncient"] = None
     else:
         random_genomes = genome_comp["Taxon"].to_list()
-        self["onlyAncient"] = str(self["onlyAncient"])
+        mapping = dict(genome_comp[["Taxon", "coverage_ancient"]].values)
+        self.loc[
+            self["Taxon"].isin(random_genomes), "coverage_ancient"
+        ] = self.Taxon.map(mapping)
+        # self["onlyAncient"] = self["onlyAncient"].astype(str)
         self["onlyAncient"].replace(
-            {"None": None, "True": True, "False": False}, inplace=True
+            {"None": None, "True": True, "False": False, np.nan: None}, inplace=True
         )
 
     # random_genomes = withAncient[withAncient['Taxon'].isin(random_genomes)].copy()
-    self.loc[~self["Taxon"].isin(random_genomes), "coverage_ancient"] = 0
-    self.loc[self["onlyAncient"].isin([True]), "coverage_ancient"] = self[
-        "max_ancient_cov_allowed"
-    ]
+    # self.loc[self["Taxon"].isnull(), "coverage_ancient"] = 0
+    self.loc[self["onlyAncient"].isnull(), "coverage_ancient"] = 0
+    # self.loc[self["onlyAncient"].isin([True]), "coverage_ancient"] = self[
+    #     "max_ancient_cov_allowed"
+    # ]
+    # print(self)
     return self
 
 
@@ -520,6 +551,7 @@ def refine_abundances(data, n_reads):
     )
 
     for p in data:
+        print(p)
         if p.fragments_ancient is not None:
             df_sub = df.loc[
                 (df["comm"] == str(p.comm))
@@ -549,10 +581,15 @@ def refine_abundances(data, n_reads):
 
 
 def rand_isAncient(row):
+    """
+    Define if a genome in a community is onlyAncient or not
+    """
     if row["max_ancient_cov_allowed"] < row["coverage_ancient"]:
-        return None
+        return str(None)
     else:
-        return bool(np.random.choice([True, False], p=[0.4, 0.6], size=1, replace=True))
+        return str(
+            bool(np.random.choice([True, False], p=[0.4, 0.6], size=1, replace=True))
+        )
 
 
 # Modified from https://stackoverflow.com/q/25271388
@@ -662,9 +699,15 @@ def main(args):
     if genome_comp:
         logging.info("Loading genome composition table...")
         genome_comp = pd.read_csv(genome_comp, sep="\t")
+        genome_comp = genome_comp.rename(columns={"Coverage": "coverage_ancient"})
+    else:
+        genome_comp = pd.DataFrame(columns=["Taxon", "coverage_ancient", "onlyAncient"])
 
     df = abund_table.merge(genome_table, on=["Taxon"])
-    genomes = df.values.tolist()
+
+    genomes = df[
+        ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
+    ].values.tolist()
     # We need to add to the taxon the proportion of ancient
     # We need to take Community,
     logging.info("Selecting random genomes...")
@@ -685,9 +728,15 @@ def main(args):
         "rank_cutoff": 0.1,
         "genome_comp": genome_comp,
     }
-    selected_genomes = applyParallel(
-        grouped, func=select_genomes, nproc=nproc, parms=parms
-    )
+
+    if debug is True:
+        selected_genomes = applyParallel(
+            grouped, func=select_genomes, nproc=1, parms=parms
+        )
+    else:
+        selected_genomes = applyParallel(
+            grouped, func=select_genomes, nproc=nproc, parms=parms
+        )
 
     logging.info(
         "Generating random fragment lengths from {} distribution with modes {} and {}...".format(
