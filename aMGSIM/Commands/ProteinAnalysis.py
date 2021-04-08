@@ -235,10 +235,16 @@ def main(args):
 
     logging.info("Finding damage in codons...")
     comm_files = list(product(comms, genome_ids))
+
+    p_procs = nproc * ncpu
+
+    if p_procs > len(comm_files):
+        p_procs = len(comm_files)
+
     if debug is True:
         data = list(map(func, comm_files))
     else:
-        p = MyPool(ncpu)
+        p = MyPool(p_procs)
         data = list(
             tqdm.tqdm(
                 p.imap_unordered(func, comm_files),
@@ -246,11 +252,10 @@ def main(args):
             )
         )
     logging.info("Combining files...")
-    p_procs =   nproc * ncpu
 
     if p_procs > len(comms):
         p_procs = len(comms)
-        
+
     func = partial(combine_files, tmp_damage=tmp_damage, out_dir=out_dir)
     if debug is True:
         ofiles = list(map(func, comms))

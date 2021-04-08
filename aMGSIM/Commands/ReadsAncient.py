@@ -64,6 +64,7 @@ import logging
 from functools import partial
 from multiprocessing import Pool
 from schema import Schema, And, Optional, Or, Use, SchemaError
+from shutil import rmtree
 
 # application
 # from aMGSIM import SimReadsAncient
@@ -128,7 +129,11 @@ def _rename_name(x, output_dir):
     re3 = re.compile(r"_*complete_genome")
     re4 = re.compile(r"(.{78}).+")
     ambig_chars = re.compile(r"[RYSWKMBVDH]")
-
+    taxon = re0.sub("", taxon)
+    taxon = re1.sub("_", taxon)
+    taxon = re2.sub(r"\1", taxon)
+    taxon = re3.sub("", taxon)
+    taxon = re4.sub(r"\1", taxon)
     # iterating through sequence
     ambig_cnt = 0
     encoding = guess_type(file)[1]  # uses file extension
@@ -143,7 +148,7 @@ def _rename_name(x, output_dir):
                 name = re2.sub(r"\1", name)
                 name = re3.sub("", name)
                 name = re4.sub(r"\1", name)
-                name = "{}__{}".format(taxon, name)
+                name = "{}__seq-{}".format(taxon, i)
                 # name = name.lstrip('>') + '__seq{}'.format(i)
                 record.id = name
                 record.description = name
@@ -155,8 +160,7 @@ def _rename_name(x, output_dir):
 def rename_genomes(genome_table, cpus, output_dir):
 
     func = partial(_rename_name, output_dir=output_dir)
-
-    genomes = genome_table.values.tolist()
+    genomes = genome_table[["Taxon", "Fasta", "Genome_size"]].values.tolist()
 
     if debug is True:
         files = list(map(func, genomes))
@@ -362,8 +366,8 @@ def prepare_data_fragments(
 
 @dataclass
 class Returnvalue:
-    ancient: {}
-    modern: {}
+    ancient: dict()
+    modern: dict()
 
 
 def collect_file_names(
@@ -899,9 +903,17 @@ def main(args):
     tmp_dir = config_params["tmp_dir"]
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
+    else:
+        logging.info("Folder {} already exists. Deleting...".format(tmp_dir))
+        rmtree(tmp_dir)
+        os.makedirs(tmp_dir, exist_ok=True)
 
     output_dir = config_params["output_dir"]
     if not os.path.isdir(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+    else:
+        logging.info("Folder {} already exists. Deleting...".format(output_dir))
+        rmtree(output_dir)
         os.makedirs(output_dir, exist_ok=True)
 
     logging.info("Loading genomes...")
@@ -929,8 +941,6 @@ def main(args):
         deamSim_params=deamSim_params,
         adptSim_exe=config_params["adptSim"],
         adptSim_params=adptSim_params,
-        adptRem_exe=config_params["AdapterRemoval"],
-        adptRem_params=adptRem_params,
         art_exe=config_params["art"],
         art_params=art_params,
         libprep=libprep,

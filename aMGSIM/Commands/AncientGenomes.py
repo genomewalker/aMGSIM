@@ -159,7 +159,6 @@ class Genome:
         #     self.onlyAncient = None
         # If it is not modern get the coverage
         self.onlyAncient = selected_genomes_filt.iloc[0]["onlyAncient"]
-        print(self.onlyAncient)
         # if taxons.empty:
         #     if self.onlyAncient is not None:
         #         coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
@@ -175,7 +174,6 @@ class Genome:
         #     self.onlyAncient = None
 
         if self.onlyAncient is True:
-            print("I am TRUE")
             self.onlyAncient = True
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
@@ -227,7 +225,6 @@ class Genome:
             self.seq_depth = seq_depth
 
         elif self.onlyAncient is None:
-            print("I am NONE")
             self.fragments_ancient = None
             self.fragments_modern = self.random_fragments(
                 min_len=min_len,
@@ -264,7 +261,6 @@ class Genome:
             self.seq_depth = seq_depth_modern
 
         else:
-            print("I am FALSE")
             self.onlyAncient = False
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
@@ -551,7 +547,6 @@ def refine_abundances(data, n_reads):
     )
 
     for p in data:
-        print(p)
         if p.fragments_ancient is not None:
             df_sub = df.loc[
                 (df["comm"] == str(p.comm))
@@ -693,7 +688,7 @@ def main(args):
     logging.info("Loading abundace table...")
     abund_table = SimReads.load_abund_table(abund_table)
 
-    logging.info("Loading abundace genomes...")
+    logging.info("Loading abundance genomes...")
     genome_table = f.load_genome_table(config["genome_table"])
 
     if genome_comp:
