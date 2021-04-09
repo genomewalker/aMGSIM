@@ -7,3 +7,4 @@ dependencies:
   - art
   - prodigal
   - adapterremoval
+  - gargammel-slim

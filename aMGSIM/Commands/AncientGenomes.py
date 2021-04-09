@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-ancient-genomes: simulating ancient reads
+ancient-genomes: Estimate coverage, depth and other properties for each genome
+                 in each synthetic community
 
 Usage:
   ancient-genomes [options] <config>
@@ -9,16 +10,16 @@ Usage:
   ancient-genomes --version
 
 Options:
-  <config>              Config parameters
-  -d --debug                 Debug mode (no subprocesses; verbose output)
-  -h --help                  Show this screen.
-  --version                  Show version.
+  <config>       Config parameters
+  -d --debug     Debug mode (no subprocesses; verbose output)
+  -h --help      Show this screen.
+  --version      Show version.
 
 Description:
   Simulating ancient reads for each taxon in each synthetic community
 
-  abund_table
-  -----------
+  config
+  ------
   * tab-delimited
   * must contain 3 columns
     * "Community" = community ID (ie., sample ID)
@@ -28,8 +29,8 @@ Description:
   Output
   ------
   * A JSON file with the properties of the selected ancient genomes
-    * directory structure: OUTPUT_DIR/COMMUNITY/ancient-read_files
-    * read sequences are named by the taxon they originate from
+  * A TSV file with the read abundances for the ancient/modern genomes in each
+    synthetic community
 """
 
 # import
