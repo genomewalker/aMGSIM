@@ -748,8 +748,7 @@ def main(args):
         selected_genomes = applyParallel(
             grouped, func=select_genomes, nproc=nproc, parms=parms
         )
-    print(genome_comp)
-    print(selected_genomes)
+
     logging.info(
         "Generating random fragment lengths from {} distribution with modes {} and {}...".format(
             dist, mode_len_ancient, mode_len_modern
