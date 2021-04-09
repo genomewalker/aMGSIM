@@ -6,7 +6,7 @@ import versioneer
 install_reqs = [
     "docopt>=0.6.2",
     "numpy>=1.10",
-    "pandas>=0.18",
+    "pandas>=1.2.2",
     "scipy>=0.17",
     "configobj>=5.0.6",
     "biopython>=1.68",
@@ -15,10 +15,10 @@ install_reqs = [
     "ruamel.yaml>=0.16",
     "jsonpickle>=1.4.1",
     "tqdm>=4.48",
-    "pyfaidx>=0.5.9",
+    "pyfaidx>=0.8.1",
     "biolib>=0.1.6",
     "Cython>=0.29.21",
-    "pyranges>=0.0.84",
+    "pyranges>=0.0.94",
     "ray>=0.8.7",
     "MGSIM>=0.2.2",
 ]
@@ -39,4 +39,9 @@ setup(
     packages=find_packages(),
     package_dir={"aMGSIM": "aMGSIM"},
     url="https://github.com/genomewalker/aMGSIM",
+    classifiers=[
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+    ],
 )
