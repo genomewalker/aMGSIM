@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
-import os
-import glob
-import numpy
 import versioneer
 
 # dependencies
@@ -38,7 +35,6 @@ setup(
     author_email="antonio@metagenomics.eu",
     entry_points={"console_scripts": ["aMGSIM = aMGSIM.__main__:main"]},
     install_requires=install_reqs,
-    include_dirs=[numpy.get_include()],
     license="MIT license",
     packages=find_packages(),
     package_dir={"aMGSIM": "aMGSIM"},
