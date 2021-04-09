@@ -33,7 +33,7 @@ requirements:
     - biolib>=0.1.6
     - pyranges>=0.0.94
     - ray>=0.8.7
-    - Cython>=0.29.21
+    - pandarallel>=1.5.2
     - MGSIM>=0.2.2
     - art
     - prodigal

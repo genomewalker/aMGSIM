@@ -19,6 +19,7 @@ install_reqs = [
     "pyranges>=0.0.94",
     "ray>=0.8.7",
     "MGSIM>=0.2.2",
+    "pandarallel>=1.5.2",
 ]
 
 ## install main application
