@@ -1,0 +1,18 @@
+genome_table: examples/data/genome_list.txt # Table with genomes to use
+abund_table: example_abund.txt # Abundace table with
+genome_comp: genome-comp.tsv
+cpus: 16 # Number of cpus. [Default: 1]
+min-length: 30 # Minimum fragment length [Default: 30]
+length-dist: lognormal # Fragment length distribution [Default: lognormal]
+mode-len-ancient: 40 # Mode of the acient fragments length distribution [Default: 40]
+mode-len-modern: 100 # Mode of the acient fragments length distribution [Default: 100]
+prop-ancient-comm: 0.2 # Proportion of ancient genomes per site. [Default: 0.1]
+coverage: [0.1, 5] # Maximum and minimum coverage of the genomes in each samples. [Default: 0.1]
+seqSys: HS25 # Sequencing technology [Default: HS25]
+num-reads: 5e6 # Number of reads to generate per sample [Default: 1e6]
+read-len: 150 # Desired final read length. Will be used by adptSim and ART [Default: 150]
+enforce-cov: True # Enforce ancient genome coverage, original abundance tables might be modified [Default: True]
+single:
+  False # Use single end library properties [Default: False]
+  # Temporary folder
+tmp_dir: .sim_reads-example

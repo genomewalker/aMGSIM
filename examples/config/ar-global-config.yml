@@ -1,0 +1,54 @@
+global:
+  # Path to the fragSim binary
+  fragSim: fragSim
+  # Path to the deamSim binary
+  deamSim: deamSim
+  # Path to the adptSim binary
+  adptSim: adptSim
+  # Path to the art_illumina binary
+  art: art_illumina
+  # Path to the AdapterRemoval binary
+  AdapterRemoval: AdapterRemoval
+  # Temporary folder
+  tmp_dir: .sim_reads
+  # Number of cpus
+  cpus: 16
+  # Output dir
+  output_dir: example-data
+  # libprep single or double
+  libprep: double
+  #-fragSim_config: fragSim-config.yaml
+  #deamSim_config: deamSim-config.yaml
+  # ART config file
+  #art_config: art-config.yaml
+fragSim:
+  ancient_genomes: example_abund.json
+  modern:
+    --case: True # Do not set the sequence to upper-case (default: uppercase the seqs.)
+    --comp: False # [file] Base composition for the fragments (default none)
+    --dist: False # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
+    --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
+  ancient:
+    --case: False # Do not set the sequence to upper-case (default: uppercase the seqs.)
+    --comp: False # [file] Base composition for the fragments (default none)
+    --dist: False # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
+    --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
+deamSim:
+  -mapdamage: False #  Read the miscorporation file [mis.txt] produced by mapDamage
+  -damage: [0.03, 0.25, 0.01, 0.5] #[0.03, 0.4, 0.01, 0.7] # For the Briggs et al. 2007 model The parameters must be comma-separated e.g.: -damage 0.03,0.4,0.01,0.7
+adptSim:
+  -f: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGC
+  -s: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
+art:
+  --qprof1: False
+  --qprof2: False
+AdapterRemoval:
+  --adapter1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGC
+  --adapter2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
+  --minlength: 30
+  --trimns: True
+  --collapse: True
+  --trimqualities: True
+  --minadapteroverlap: 1
+  --preserve5p: False
+  --minquality: 20
