@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-ancient-reads: simulating ancient reads
+ancient-reads: Simulate ancient reads for each taxon in each synthetic
+               community
 
 Usage:
   ancient-reads [options] <genome_table> <config>
@@ -12,19 +13,11 @@ Options:
   <genome_table>      Taxon genome info.
   <config>            Config parameters
   -h --help           Show this screen.
-  -d --debug                  Debug mode (no subprocesses; verbose output)
+  -d --debug          Debug mode (no subprocesses; verbose output)
   --version           Show version.
 
 Description:
   Simulating ancient reads for each taxon in each synthetic community
-
-  abund_table
-  -----------
-  * tab-delimited
-  * must contain 3 columns
-    * "Community" = community ID (ie., sample ID)
-    * "Taxon" = taxon name
-    * "Perc_rel_abund" = percent relative abundance of the taxon
 
   genome_table
   ------------
@@ -34,23 +27,17 @@ Description:
     * "Fasta" = genome fasta file path
   * other columns are allowed
 
-  ancient_genome_table
-  ------------
-  * tab-delimited
-  * must contain 2 columns
-    * "Taxon" = taxon name
-    * "Fasta" = genome fasta file path
-  * other columns are allowed
-
-  art_config
-  ------------
-  * YAML with ART config parameters
+  config
+  ------
+  * YAML with config parameters 
+    (Check https://github.com/genomewalker/aMGSIM for details)
 
   Output
   ------
-  * A set of read files for each sample
-    * directory structure: OUTPUT_DIR/COMMUNITY/ancient-read_files
-    * read sequences are named by the taxon they originate from
+  * A set of read files for each sample (fragSim, deamSim, ART)
+    - read sequences are named by the taxon they originate from
+    - directory structure: OUTPUT_DIR/COMMUNITY/ancient-read_files
+  * A JSON file with the location of each file type (fragSim, deamSim, ART)
 """
 
 # import

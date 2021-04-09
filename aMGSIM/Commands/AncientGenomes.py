@@ -28,7 +28,7 @@ Description:
 
   Output
   ------
-  * A JSON file with the properties of the selected ancient genomes
+  * A JSON file with the read properties for the selected ancient genomes
   * A TSV file with the read abundances for the ancient/modern genomes in each
     synthetic community
 """
@@ -147,11 +147,13 @@ class Genome:
         # selected_genomes_filt["onlyAncient"].replace(
         #     {"None": None, "True": True, "False": False}, inplace=True
         # )
-
-        taxons = genome_comp[
-            (genome_comp["Taxon"] == self.taxon)
-            & (genome_comp["Community"] == self.comm)
-        ]
+        if genome_comp.empty:
+            taxons = pd.DataFrame()
+        else:
+            taxons = genome_comp[
+                (genome_comp["Taxon"] == self.taxon)
+                & (genome_comp["Community"] == self.comm)
+            ]
 
         # Is onlyAncient, mix or only moders
         # if len(selected_genomes_filt.index) > 0:
@@ -473,23 +475,36 @@ def select_genomes(self, parms):
     if genome_comp.empty:
         random_genomes = np.random.choice(pop, replace=False, p=w, size=k)
         self.loc[~self["Taxon"].isin(random_genomes), "onlyAncient"] = None
+        self["onlyAncient"].replace(
+            {"None": None, "True": True, "False": False, np.nan: None}, inplace=True
+        )
+        self.loc[
+            self["onlyAncient"].isnull(),
+            "coverage_ancient",
+        ] = 0
+        self.loc[self["onlyAncient"] == True, "coverage_ancient"] = self[
+            "max_ancient_cov_allowed"
+        ]
     else:
         random_genomes = genome_comp["Taxon"].to_list()
+        self["onlyAncient"].replace(
+            {"None": None, "True": True, "False": False, np.nan: None}, inplace=True
+        )
         mapping = dict(genome_comp[["Taxon", "coverage_ancient"]].values)
+        self.loc[self["onlyAncient"] == True, "coverage_ancient"] = self[
+            "max_ancient_cov_allowed"
+        ]
         self.loc[
             self["Taxon"].isin(random_genomes), "coverage_ancient"
         ] = self.Taxon.map(mapping)
         # self["onlyAncient"] = self["onlyAncient"].astype(str)
-        self["onlyAncient"].replace(
-            {"None": None, "True": True, "False": False, np.nan: None}, inplace=True
-        )
-
+        self.loc[
+            self["onlyAncient"].isnull(),
+            "coverage_ancient",
+        ] = 0
     # random_genomes = withAncient[withAncient['Taxon'].isin(random_genomes)].copy()
     # self.loc[self["Taxon"].isnull(), "coverage_ancient"] = 0
-    self.loc[self["onlyAncient"].isnull(), "coverage_ancient"] = 0
-    # self.loc[self["onlyAncient"].isin([True]), "coverage_ancient"] = self[
-    #     "max_ancient_cov_allowed"
-    # ]
+
     # print(self)
     return self
 
@@ -733,7 +748,8 @@ def main(args):
         selected_genomes = applyParallel(
             grouped, func=select_genomes, nproc=nproc, parms=parms
         )
-
+    print(genome_comp)
+    print(selected_genomes)
     logging.info(
         "Generating random fragment lengths from {} distribution with modes {} and {}...".format(
             dist, mode_len_ancient, mode_len_modern
