@@ -26,7 +26,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -e .
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov pytest-dependency pytest-console-scripts
           pytest
       - name: Check aMGSIM help message
         shell: bash -l {0}

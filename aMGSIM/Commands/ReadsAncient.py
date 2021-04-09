@@ -55,7 +55,6 @@ Description:
 
 # import
 # batteries
-from collections import defaultdict
 from docopt import docopt
 import sys
 import os
@@ -63,12 +62,9 @@ import re
 import logging
 from functools import partial
 from multiprocessing import Pool
-from schema import Schema, And, Optional, Or, Use, SchemaError
 from shutil import rmtree
 
 # application
-# from aMGSIM import SimReadsAncient
-from MGSIM import SimReads
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f
 import json
@@ -78,14 +74,12 @@ from pathlib import Path
 import subprocess
 
 # import tqdm
-from tqdm.contrib.concurrent import process_map  # or thread_map
 import tqdm
 from dataclasses import dataclass
 from Bio import SeqIO
 import itertools
 import gzip
 from mimetypes import guess_type
-from biolib.external.prodigal import Prodigal
 from aMGSIM import __version__
 
 debug = None

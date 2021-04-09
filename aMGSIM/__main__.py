@@ -2,7 +2,6 @@
 
 # import
 ## batteries
-import os
 import sys
 
 ## 3rd party

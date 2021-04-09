@@ -43,13 +43,12 @@ from multiprocessing import Pool
 import numpy as np
 import json
 from pathlib import Path
-import sys, os
+import sys
 
 # application
 from MGSIM import SimReads
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f
-import jsonpickle
 import datetime
 import tqdm
 from collections import OrderedDict

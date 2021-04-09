@@ -44,12 +44,7 @@ Description:
 # %%
 # import
 # batteries
-import re
-import pyranges as pr
-import gzip
-from mimetypes import guess_type
 from biolib.external.prodigal import Prodigal
-from Bio import SeqIO
 from itertools import product
 import glob
 import multiprocessing.pool
@@ -57,25 +52,16 @@ from docopt import docopt
 import logging
 import pandas as pd
 from functools import partial
-from multiprocessing import Pool
-import numpy as np
-import json
 from pathlib import Path
 import sys
-from tqdm.contrib.concurrent import process_map  # or thread_map
 import tqdm
 
 # application
-from aMGSIM.library import defaults as d
-from aMGSIM.library import functions as f
 from aMGSIM.library import pa_functions as pa
 
-import jsonpickle
-import datetime
 import tqdm
 import os
 import json
-from pandarallel import pandarallel
 from aMGSIM import __version__
 
 # Codon functions

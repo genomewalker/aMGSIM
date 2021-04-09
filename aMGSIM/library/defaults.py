@@ -1,12 +1,10 @@
 # Constants
 from schema import And, Optional, Or, Use
 from multiprocessing import cpu_count
-import aMGSIM.library.functions as f
 import os
 import shutil
 import datetime
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
+
 
 # schema_init_ag = {
 #     '<abund_table>': [Use(open, error='abund_table should be readable')],
