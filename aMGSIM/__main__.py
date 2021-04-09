@@ -14,14 +14,17 @@ from MGSIM.Commands import Communities
 from aMGSIM.Commands import AncientGenomes
 from aMGSIM.Commands import ReadsAncient
 from aMGSIM.Commands import ProteinAnalysis
+from aMGSIM import __version__
 
 
 def main(args=None):
     """Main entry point for application"""
     if args is None:
+        print("aMGSIM: simulate ancient metagenomes for multiple synthetic communities")
         args = sys.argv[1:]
 
     docs = """
+    
 aMGSIM: simulate ancient metagenomes for multiple synthetic communities
 
 Usage:
@@ -42,7 +45,8 @@ Description:
   See the sub-command documentation for more information on features.
     """
     # arg parse
-    args = docopt(docs, version="0.1", options_first=True)
+    version = "Version: " + __version__
+    args = docopt(docs, version=version, options_first=True)
 
     # dict of all subcommands
     cmds = {

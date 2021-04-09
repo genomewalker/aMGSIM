@@ -76,6 +76,7 @@ import tqdm
 import os
 import json
 from pandarallel import pandarallel
+from aMGSIM import __version__
 
 # Codon functions
 
@@ -152,10 +153,11 @@ def obj_dict(obj):
 
 
 def opt_parse(args=None):
+    version = "Version: " + __version__
     if args is None:
-        args = docopt(__doc__, version="0.1")
+        args = docopt(__doc__, version=version)
     else:
-        args = docopt(__doc__, version="0.1", argv=args)
+        args = docopt(__doc__, version=version, argv=args)
     main(args)
 
 

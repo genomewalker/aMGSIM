@@ -53,6 +53,7 @@ import jsonpickle
 import datetime
 import tqdm
 from collections import OrderedDict
+from aMGSIM import __version__
 
 debug = None
 
@@ -802,8 +803,9 @@ def main(args):
 
 
 def opt_parse(args=None):
+    version = "Version: " + __version__
     if args is None:
-        args = docopt(__doc__, version="0.1")
+        args = docopt(__doc__, version=version)
     else:
-        args = docopt(__doc__, version="0.1", argv=args)
+        args = docopt(__doc__, version=version, argv=args)
     main(args)

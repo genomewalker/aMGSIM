@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 import os
 import glob
 import numpy
-
+import versioneer
 
 # dependencies
 install_reqs = [
@@ -30,8 +30,9 @@ install_reqs = [
 desc = "Anciengt metagenome simulation of multiple synthetic communities"
 setup(
     name="aMGSIM",
-    version="0.1",
-    description=desc,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+    description="aMGSIM: simulate ancient metagenomes for multiple synthetic communities",
     long_description=desc + "\n See README for more information.",
     author="Antonio Fernandez-Guerra",
     author_email="antonio@metagenomics.eu",

@@ -1,0 +1,51 @@
+{% set setup_data = load_setup_py_data() %}
+package:
+  name: aMGSIM
+  version: {{ setup_data['version'] }}
+
+source:
+  git_rev: {{ setup_data['version'] }}
+  git_url: https://github.com/genomewalker/aMGSIM.git
+
+build:
+  number: 0
+  skip: true  # [win and py27 or win32]
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - pip
+  run:
+    - docopt>=0.6.2
+    - numpy>=1.10
+    - pandas>=0.18
+    - scipy>=0.17
+    - configobj>=5.0.6
+    - biopython>=1.68
+    - pyfastx>=0.6.10
+    - schema>=0.7.0
+    - ruamel.yaml>=0.16
+    - jsonpickle>=1.4.1
+    - tqdm>=4.48
+    - pyfaidx>=0.5.9
+    - biolib>=0.1.6
+    - Cython>=0.29.21
+    - pyranges>=0.0.84
+    - ray>=0.8.7
+    - MGSIM>=0.2.2
+    - art
+    - prodigal
+    - adapterremoval
+    - gargammel-slim
+    
+test:
+  commands:
+    - aMGSIM -h
+
+about:
+  home: https://github.com/genomewalker/aMGSIM
+  summary: "A simple genome de-replication tool with fastANI"
+  license: {{ setup_data['license'] }}
+  license_file: LICENSE
