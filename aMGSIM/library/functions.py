@@ -247,6 +247,10 @@ def get_config(config, schema, debug):
 #     return(deamSim_parameters)
 
 
+def power_neg(*args, **kwargs):
+    return 1 - np.random.power(*args, **kwargs)
+
+
 def get_freq_dist(dist, params):
     try:
         distFunc = getattr(np.random, dist)
