@@ -149,6 +149,11 @@ ag_schema_config = {
             error="Coverage values must be integers or float, and min should be larger than max",
         )
     ),
+    "library": And(
+        str,
+        lambda x: x in ["single", "paired"],
+        error="Library has to be single or paired",
+    ),
     Optional("enforce-cov", default=True): And(
         bool, error="The enforce coverage option should be True/False"
     ),

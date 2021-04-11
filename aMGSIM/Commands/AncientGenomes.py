@@ -422,7 +422,8 @@ def select_genomes(self, parms):
                 self["seq_depth"] * read_length_ancient
             ) / self["Genome_size"]
 
-            self["coverage_ancient"] = coverage_ancient.tolist()
+            self["coverage_ancient_rnd"] = coverage_ancient.tolist()
+            self["coverage_ancient"] = 0
             self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
             self["onlyAncient"] = self["onlyAncient"].astype(str)
 
@@ -450,7 +451,8 @@ def select_genomes(self, parms):
         self["max_ancient_cov_allowed"] = (
             self["seq_depth"] * read_length_ancient
         ) / self["Genome_size"]
-        self["coverage_ancient"] = coverage_ancient.tolist()
+        self["coverage_ancient_rnd"] = coverage_ancient.tolist()
+        self["coverage_ancient"] = 0
         self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
 
         # self['Rank_perd'] = self['Rank']/self['Rank'].max()
@@ -482,22 +484,82 @@ def select_genomes(self, parms):
             self["onlyAncient"].isnull(),
             "coverage_ancient",
         ] = 0
-        self.loc[self["onlyAncient"] == True, "coverage_ancient"] = self[
-            "max_ancient_cov_allowed"
-        ]
+        self.loc[
+            (self["onlyAncient"] == True)
+            & (self["max_ancient_cov_allowed"] > self["coverage_ancient_rnd"]),
+            "coverage_ancient",
+        ] = self["coverage_ancient_rnd"]
+        self.loc[
+            (self["onlyAncient"] == True)
+            & (self["max_ancient_cov_allowed"] <= self["coverage_ancient_rnd"]),
+            "coverage_ancient",
+        ] = self["max_ancient_cov_allowed"]
+        self.loc[
+            (self["onlyAncient"] == False),
+            "coverage_ancient",
+        ] = self["coverage_ancient_rnd"]
     else:
         random_genomes = genome_comp["Taxon"].to_list()
         self["onlyAncient"].replace(
             {"None": None, "True": True, "False": False, np.nan: None}, inplace=True
         )
         mapping = dict(genome_comp[["Taxon", "coverage_ancient"]].values)
-        self.loc[self["onlyAncient"] == True, "coverage_ancient"] = self[
-            "max_ancient_cov_allowed"
-        ]
+
+        """
+        if onlyancient we use the max ancient cov instead of the random
+        one if the max ancient cov is larger
+        """
+        self.loc[
+            (self["onlyAncient"] == True)
+            & (self["max_ancient_cov_allowed"] > self["coverage_ancient_rnd"]),
+            "coverage_ancient",
+        ] = self["max_ancient_cov_allowed"]
+
+        """
+        if onlyancient we use get rnd ancient cov instead of the max cov
+        one if the max ancient cov is smaller
+        """
+        self.loc[
+            (self["onlyAncient"] == True)
+            & (self["max_ancient_cov_allowed"] <= self["coverage_ancient_rnd"]),
+            "coverage_ancient",
+        ] = self["coverage_ancient_rnd"]
+
+        """
+        If onlyancient is False we use the random cov
+        """
+        self.loc[
+            (self["onlyAncient"] == False),
+            "coverage_ancient",
+        ] = self["coverage_ancient_rnd"]
+
+        """
+        if we have a file specifiying cov and type of cov we use it
+        """
         self.loc[
             self["Taxon"].isin(random_genomes), "coverage_ancient"
         ] = self.Taxon.map(mapping)
-        # self["onlyAncient"] = self["onlyAncient"].astype(str)
+
+        """
+        If the assigned coverage for onlyAncient is larger than the max
+        cov we assign max
+        """
+        self.loc[
+            (self["onlyAncient"] == True)
+            & (self["coverage_ancient"] > self["max_ancient_cov_allowed"]),
+            "coverage_ancient",
+        ] = self["max_ancient_cov_allowed"]
+
+        """
+        If the assigned coverage for onlyAncient == False is larger than the max
+        cov we assign the max
+        """
+        self.loc[
+            (self["onlyAncient"] == False)
+            & (self["coverage_ancient"] > self["max_ancient_cov_allowed"]),
+            "coverage_ancient",
+        ] = self["max_ancient_cov_allowed"]
+
         self.loc[
             self["onlyAncient"].isnull(),
             "coverage_ancient",
@@ -665,7 +727,7 @@ def main(args):
         abund_table = config["abund_table"]
         filename = abund_table
 
-    if config["single"] is True:
+    if config["library"] == "single":
         library = "se"
     else:
         library = "pe"
@@ -687,8 +749,6 @@ def main(args):
     mode_len_modern = config["mode-len-modern"]
     n_reads = config["num-reads"]
     coverage = {"min": config["coverage"][0], "max": config["coverage"][1]}
-
-    enforce_cov = config["enforce-cov"]
 
     if read_len > max_len:
         raise ValueError(
@@ -748,7 +808,8 @@ def main(args):
         selected_genomes = applyParallel(
             grouped, func=select_genomes, nproc=nproc, parms=parms
         )
-
+    print(selected_genomes)
+    exit(1)
     logging.info(
         "Generating random fragment lengths from {} distribution with modes {} and {}...".format(
             dist, mode_len_ancient, mode_len_modern
@@ -778,7 +839,6 @@ def main(args):
             tqdm.tqdm(p.imap_unordered(func, genomes), total=len(genomes))
         )
         # ancient_genomes_data = p.map(func, genomes)
-
     file_name = Path(filename.name).stem
     dir_name = Path(filename.name).parent
 

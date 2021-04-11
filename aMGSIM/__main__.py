@@ -19,7 +19,6 @@ from aMGSIM import __version__
 def main(args=None):
     """Main entry point for application"""
     if args is None:
-        print("aMGSIM: simulate ancient metagenomes for multiple synthetic communities")
         args = sys.argv[1:]
 
     docs = """
@@ -46,6 +45,9 @@ Description:
     # arg parse
     version = "Version: " + __version__
     args = docopt(docs, version=version, options_first=True)
+
+    if not args["<args>"]:
+        print("aMGSIM: simulate ancient metagenomes for multiple synthetic communities")
 
     # dict of all subcommands
     cmds = {
