@@ -8,3 +8,4 @@ dependencies:
   - prodigal
   - adapterremoval
   - gargammel-slim
+  - Cython
