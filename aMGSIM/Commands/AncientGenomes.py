@@ -131,7 +131,7 @@ class Genome:
         # ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
         self.comm = genome[0]
         self.taxon = genome[1]
-        self.rel_abund = genome[3]
+        self.rel_abund = genome[2]
         self.genome_size = genome[4]
         # self.library = library
         # self.read_length = max_len
