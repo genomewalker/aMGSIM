@@ -17,12 +17,9 @@ global:
   output_dir: example-data
   # libprep single or double
   libprep: double
-  #-fragSim_config: fragSim-config.yaml
-  #deamSim_config: deamSim-config.yaml
-  # ART config file
-  #art_config: art-config.yaml
+
 fragSim:
-  ancient_genomes: example_abund.json
+  ancient_genomes: example_wAbund.json
   modern:
     --case: True # Do not set the sequence to upper-case (default: uppercase the seqs.)
     --comp: False # [file] Base composition for the fragments (default none)
@@ -35,13 +32,18 @@ fragSim:
     --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
 deamSim:
   -mapdamage: False #  Read the miscorporation file [mis.txt] produced by mapDamage
-  -damage: [0.03, 0.25, 0.01, 0.5] #[0.03, 0.4, 0.01, 0.7] # For the Briggs et al. 2007 model The parameters must be comma-separated e.g.: -damage 0.03,0.4,0.01,0.7
+  # v: nick frequency
+  # l: length of overhanging ends (geometric parameter)
+  # d: prob. of deamination of Cs in double-stranded parts
+  # s: prob. of deamination of Cs in single-stranded parts
+  -damage: [0.03, 0.1, 0.01, 0.1] #[0.03, 0.4, 0.01, 0.7] # For the Briggs et al. 2007 model The parameters must be comma-separated e.g.: -damage 0.03,0.4,0.01,0.7
 adptSim:
   -f: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGC
   -s: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
 art:
   --qprof1: False
   --qprof2: False
+# Experimental; not implemented yet
 AdapterRemoval:
   --adapter1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGC
   --adapter2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT

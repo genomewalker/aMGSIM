@@ -148,7 +148,7 @@ The values of coverage will be always downsized to fit the _maximum coverage all
 
 The subcommand `ancient-genomes` also creates the fragment size distribution for each genome in each sample. At the moment aMGSIM only accepts `lognormal` as the distribution where to sample the fragment lengths. We can specify the mode of the distribution for modern (`mode-len-modern`) and ancient (`mode-len-ancient`) and aMGSIM will estimate the parameters to achieve an approximate distribution of the fragment lenghts. The estimates values will be used by `fragSim` downstream.
 
-The output of this subcommand will produce a TSV file (_PREFIX_`_read-abundances.tsv`) with the number of reads that will be generated for each taxon in each sample; and a JSON file with the details to generate the synthetic data of each taxon in each sample.
+The output of this subcommand will produce a TSV file (_PREFIX_`_read-abundances.tsv`) with the number of reads that will be generated for each taxon in each sample; and a JSON file with the details to generate the synthetic data of each taxon in each sample. The JSON produced will be used by the subcommand `ancient-reads` and has the following structure:
 
 ```
 {
@@ -214,19 +214,171 @@ The output of this subcommand will produce a TSV file (_PREFIX_`_read-abundances
 }
 ```
 
-
+The subcommand `ancient-reads` is the one creating all the fasta and fastq files with the reads for the genomes in each community:
 
 ```
-aMGSIM ancient-genomes  ag-config.yaml
-aMGSIM ancient-reads examples/data/genome_list.txt ar-global-config.yaml
+ancient-reads: Simulate ancient reads for each taxon in each synthetic
+               community
+
+Usage:
+  ancient-reads [options] <genome_table> <config>
+  ancient-reads -h | --help
+  ancient-reads --version
+
+Options:
+  <genome_table>      Taxon genome info.
+  <config>            Config parameters
+  -h --help           Show this screen.
+  -d --debug          Debug mode (no subprocesses; verbose output)
+  --version           Show version.
+
+Description:
+  Simulating ancient reads for each taxon in each synthetic community
+
+  genome_table
+  ------------
+  * tab-delimited
+  * must contain 2 columns
+    * "Taxon" = taxon name
+    * "Fasta" = genome fasta file path
+  * other columns are allowed
+
+  config
+  ------
+  * YAML with config parameters 
+    (Check https://github.com/genomewalker/aMGSIM for details)
+
+  Output
+  ------
+  * A set of read files for each sample (fragSim, deamSim, ART)
+    - read sequences are named by the taxon they originate from
+    - directory structure: OUTPUT_DIR/COMMUNITY/ancient-read_files
+  * A JSON file with the location of each file type (fragSim, deamSim, ART)
+  ```
+
+It takes as input the file with the [genome information](examples/data/genome_list.txt) used by the subcommand `communities` and a config file that specifies the details related to the tools in gargammel. A description of the different parameters can be found [here](examples/config/ar-config.yml). The config file has five main categories:
+- **global**: Here one can configure general parameters like the location of the executables, the number of cpus to use or the library preparation
+- **fragSim**: Here one can specify the parameters for fragSim and where one can use the JSON produced by the `ancient-genomes` subcommand 
+- **deamSim**: One can define the propertied for the damage, it can be a `misincorporation` file from mapDamage or the parameters for the [Briggs](https://www.pnas.org/content/104/37/14616) model
+- **adptSim**: Where to set the adapters to be used
+- **art**: One can specify custom error models in case they are not included in [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm)
+
+
+The ouput of `ancient-reads` are the read files for each community after each step (fragSim -> deamSim -> adptSim -> ART) and a JSON file with the location of each file. This JSON file can be used for the last subcommand in aMGSIM, `protein-analysis`:
+
+```
+protein-analysis: Tracking damage to the codon positions of each simulated read
+
+Usage:
+  protein-analysis [options] <files>
+  protein-analysis -h | --help
+  protein-analysis --version
+
+Options:
+  <files>                Read files
+  -p --cpus=<p>          Cpus
+                         [default: 1]
+  -n --procs=<p>         processes
+                         [default: 1]
+  -m --min-len=<l>       Minimum ORF size
+                         [default: 30]
+  -t --tmp=<d>           Tmp dir
+                         [default: .tmp]
+  -o --out-dir=<d>       Output directory
+                         [default: protein-analysis]
+  -d --debug             Debug mode (no subprocesses; verbose output)
+  -h --help              Show this screen
+  --version              Show version
+
+Description:
+  Tracking damage to the codon positions of each simulated read. It predicts
+  genes with Prodigal. Only for Archaea/Bacteria/Virus
+
+  files
+  -----
+  * A JSON file generated by the subcommand ancient-reads
+  
+  Output
+  ------
+  * A TSV file with the damage information at the codon level
+```
+
+This subcommand will predict the genes in the genome with [Prodigal](https://github.com/hyattpd/Prodigal) and will match the reads and damages to the codon positions in the predicted genes. Depending the number of reads simulated it can take some time to produce all the results. One can run the subcommand like this:
+
+```
 aMGSIM protein-analysis --cpus 3 --procs 16 example_abund_read-files.json
 ```
 
-We need a file that specifies 
+Here, `protein-analysis` will start 3 jobs and use 16 cores per each job, and will produce a rich TSV with the following columns:
 
-```
+- **index**: 14
+  - Read numnber
+- **chromosome**: Methanosarcina_barkeri_MS__seq-0
+  - Genome/contig where the read and gene are originated
+- **End**: 2114466
+  - End position of the read/gene intersection
+- **End_gene**: 2114583
+  - End position of the gene in the genome/contig
+- **End_read**: 2114466
+  - End position of the read in the genome/contig
+- **read_name**: 1___Methanosarcina_barkeri_MS__seq-0---1027401:ancient:+:2114436:2114466:30:4
+  - Name of the read
+- **Overlap**: 30
+  - Overlap between the gene and the read
+- **Start**: 2114436
+  - Start position of the read/gene intersection
+- **Start_gene**: 2114416
+  - Start position of the gene in the genome/contig
+- **Start_read**: 2114436
+  - Start position of the read in the genome/contig
+- **Strand_gene**: +
+  - Strand of the predicted gene
+- **Strand_read**: +
+  - Strand of the simulated read
+- **damage**: 4
+  - Damage position in the read
+- **damage_aaseq_diffs**: 1:L>F
+  - Amino acid differences owing to the damage (Original>Damaged)
+- **damage_codon_diffs**: 3:CTT>TTT:L>F
+  - Codon and amino acid differences owing to the damage (Original>Damaged)
+- **damage_inframe_ag**: 
+  - Damage position in the open reading frame for A-to-G (0-index)
+- **damage_inframe_ct**: 3
+  - Damage position in the open reading frame for C-to-T (0-index)
+- **damage_intersection**: 4
+  - Damage position in the intersection between read/gene in frame (1-index)
+- **damaged_seq**: AACTTTTACAAATGTGAGATAAAAAATAGT
+  - Damage sequence in present in read
+- **damaged_seq_inframe_aa**: NFYKCEIKN
+  - Damaged amino acid sequence (in frame)
+- **damaged_seq_inframe_nt**: AACTTTTACAAATGTGAGATAAAAAAT
+  - Damaged nucleotide sequence (in frame)
+- **damaged_seq_length**: 30
+  - Length of the damaged sequence
+- **gene_name**: Methanosarcina_barkeri_MS__seq-0_1774
+  - Name of the predicted gene
+- **intersect_length**: 30
+  - Length of the read/gene intersection
+- **intersect_seq**: AACCTTTACAAATGTGAGATAAAAAATAGT
+  - Sequence of the intersection
+- **intersect_seq_inframe_aa**: NLYKCEIKN
+  - Amino acid sequence of the intersection without damage
+- **intersect_seq_inframe_nt**: AACCTTTACAAATGTGAGATAAAAAAT
+  - Nucleotide sequence of the intersection without damage
+- **nondamaged_seq**: AACCTTTACAAATGTGAGATAAAAAATAGT
+  - Nucleotide non-damaged sequence
+- **read_length**: 30
+  - Read length
+- **sequence**: ATGCCTGAAGTAGAAGTCAAGAACCTTTACAAATGTGAGATAAAAAATAGTGAGATAAAAAATAGTGAGATAAAAAATAGTGAGATAAAAAATAGTGAGATAAAAAATAGTGAGATAAAAAATAGTGAGATAAAAAATAGTGAGATAAAAAATAGGTCTAAAAATTGA
+  - Gene nucletide sequence
+- *sequence_aa*: MPEVEVKNLYKCEIKNSEIKNSEIKNSEIKNSEIKNSEIKNSEIKNSEIKNRSKN*
+  - Gene amino acid sequence
+- **type**: ancient
+  - Type of read
+- **community**: 1
+  - Community where it belongs
 
-```
+
 ## LICENSE
 See [LICENSE](./LICENSE)
 
