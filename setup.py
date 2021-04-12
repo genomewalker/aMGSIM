@@ -4,7 +4,6 @@ import versioneer
 
 # dependencies
 install_reqs = [
-    "Cython>=0.29.21",
     "docopt>=0.6.2",
     "numpy>=1.20.1",
     "pandas>=1.2.2",
@@ -26,6 +25,11 @@ install_reqs = [
 ## install main application
 desc = "Anciengt metagenome simulation of multiple synthetic communities"
 setup(
+    setup_requires=[
+        # Setuptools 18.0 properly handles Cython extensions.
+        "setuptools>=18.0",
+        "Cython>=0.29.21",
+    ],
     name="aMGSIM",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),

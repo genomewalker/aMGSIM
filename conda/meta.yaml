@@ -32,12 +32,11 @@ requirements:
     - pyfaidx>=0.5.9
     - biolib>=0.1.6
     - pyranges>=0.0.94
-    - ray>=0.8.7
+    - ray>=1.2.0
     - art
     - prodigal
     - adapterremoval
     - gargammel-slim
-    - Cython>=0.29.21
     
 test:
   commands:
