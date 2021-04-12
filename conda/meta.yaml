@@ -37,7 +37,7 @@ requirements:
     - prodigal
     - adapterremoval
     - gargammel-slim
-    - Cython>=0.29
+    - Cython>=0.29.21
     
 test:
   commands:

@@ -26,13 +26,6 @@ Then we proceed to install using pip:
 pip install aMGSIM
 ```
 
-### Using conda
-
-```bash
-pip install 'pandarallel>=1.5.2' 'MGSIM>=0.2.2'
-conda install -c conda-forge -c bioconda -c genomewalker aMGSIM
-```
-
 ### Install from source to use the development version
 
 By cloning in a dedicated conda environment

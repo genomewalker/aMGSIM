@@ -4,7 +4,7 @@ import versioneer
 
 # dependencies
 install_reqs = [
-    "Cython>=0.29",
+    "Cython>=0.29.21",
     "docopt>=0.6.2",
     "numpy>=1.20.1",
     "pandas>=1.2.2",
