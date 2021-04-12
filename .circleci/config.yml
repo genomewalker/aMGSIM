@@ -20,7 +20,6 @@ jobs:
             # conda env create -q || conda env update -q
             # source activate adj
             conda install -qy conda-build anaconda-client pytest pytest-cov pytest-dependency pytest-console-scripts
-            pip install 'ray>=0.8.7' 
             conda config --set auto_update_conda no
             conda info -a
             conda build conda.recipe --no-test
