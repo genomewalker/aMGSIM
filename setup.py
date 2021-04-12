@@ -18,7 +18,7 @@ install_reqs = [
     "pyfaidx>=0.5.9",
     "biolib>=0.1.6",
     "pyranges>=0.0.94",
-    "ray>=0.8.7",
+    "ray>=1.2.0",
     "MGSIM>=0.2.2",
     "pandarallel>=1.5.2",
 ]
