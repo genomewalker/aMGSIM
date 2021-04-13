@@ -9,3 +9,6 @@ dependencies:
   - adapterremoval
   - gargammel-slim
   - python=3.7
+  - pip
+  - pip:
+      - Cython>=0.29.21
