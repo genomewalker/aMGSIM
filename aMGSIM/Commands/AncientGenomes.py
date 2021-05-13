@@ -175,8 +175,7 @@ class Genome:
         #     self.onlyAncient = bool(self.onlyAncient)
         # else:
         #     self.onlyAncient = None
-
-        if self.onlyAncient is True:
+        if self.onlyAncient == True:
             self.onlyAncient = True
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
