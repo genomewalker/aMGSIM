@@ -240,21 +240,39 @@ class Genome:
                 paired = 1
             else:
                 paired = 2
-
             read_length_modern = int(self.fragments_modern["avg_len"] * paired)
             # Number max of reads genome in sample
             if taxons.empty:
                 seq_depth_modern = int(n_reads * ((self.rel_abund / 100)))
                 fold_modern = (seq_depth_modern * read_length_modern) / self.genome_size
             else:
+                """
+                One can define to have a modern organism with a certain coverage, if the defined
+                coverage is larger that the maximum allowed, it gets downscaled to the max
+                allowed. In case it is not, it will use the defined coverage, but the defined
+                relative abundances will not be correct anymore. Also the final number of reads
+                might be different than the expected.
+                """
+
+                # Calculate max allowed based on the number of reads
+                seq_depth = int(n_reads * ((self.rel_abund / 100)))
+
+                # Calculate defined coverage
+                coverage_modern = taxons.iloc[0]["coverage_ancient"]
                 seq_depth_modern = int(
-                    (coverage_ancient * self.genome_size) / read_length_modern
+                    (coverage_modern * self.genome_size) / read_length_modern
                 )
+
+                # if defined seq depth is larger than the max allow, downscale it
+                if seq_depth_modern > seq_depth:
+                    seq_depth_modern = seq_depth
                 fold_modern = (seq_depth_modern * read_length_modern) / self.genome_size
 
             if seq_depth_modern > 0:
                 self.fragments_modern["seq_depth"] = seq_depth_modern
                 self.fragments_modern["fold"] = fold_modern
+                self.fragments_modern["fold_original"] = coverage_modern
+
             else:
                 self.fragments_modern = None
             if taxons.empty:
