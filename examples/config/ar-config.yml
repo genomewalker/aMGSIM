@@ -19,7 +19,7 @@ global:
   libprep: double
 
 fragSim:
-  ancient_genomes: example_wAbund.json
+  ancient_genomes: 0e59dd2155.json
   modern:
     --case: True # Do not set the sequence to upper-case (default: uppercase the seqs.)
     --comp: False # [file] Base composition for the fragments (default none)
@@ -31,12 +31,12 @@ fragSim:
     --dist: False # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
     --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
 deamSim:
-  -mapdamage: False #  Read the miscorporation file [mis.txt] produced by mapDamage
+  -mapdamage: misincorporation.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
   # v: nick frequency
   # l: length of overhanging ends (geometric parameter)
   # d: prob. of deamination of Cs in double-stranded parts
   # s: prob. of deamination of Cs in single-stranded parts
-  -damage: [0.03, 0.1, 0.01, 0.1] #[0.03, 0.4, 0.01, 0.7] # For the Briggs et al. 2007 model The parameters must be comma-separated e.g.: -damage 0.03,0.4,0.01,0.7
+  -damage: False #[0.03, 0.1, 0.01, 0.1] #[0.03, 0.4, 0.01, 0.7] # For the Briggs et al. 2007 model The parameters must be comma-separated e.g.: -damage 0.03,0.4,0.01,0.7
 adptSim:
   -f: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGC
   -s: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
