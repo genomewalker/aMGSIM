@@ -204,7 +204,7 @@ w_schema_config = {
         Use(
             lambda x: f.check_filter_conditions(
                 x,
-                default_filter_values_wolta,
+                default_filter_values_woltka,
                 filters=["breadth_exp_ratio", "coverage_mean"],
             )
         ),
