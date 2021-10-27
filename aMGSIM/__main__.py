@@ -10,9 +10,12 @@ from docopt import docopt
 # import Utils
 ## application
 from MGSIM.Commands import Communities
-from aMGSIM.Commands import AncientGenomes
-from aMGSIM.Commands import ReadsAncient
-from aMGSIM.Commands import ProteinAnalysis
+from aMGSIM.Commands import (
+    AncientGenomes,
+    ReadsAncient,
+    ProteinAnalysis,
+    Woltka2Sim,
+)
 from aMGSIM import __version__
 
 
@@ -53,6 +56,7 @@ Description:
     cmds = {
         "communities": Communities,
         "ancient-genomes": AncientGenomes,
+        "woltka2sim": Woltka2Sim,
         "ancient-reads": ReadsAncient,
         "protein-analysis": ProteinAnalysis,
     }

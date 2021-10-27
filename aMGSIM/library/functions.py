@@ -1,19 +1,12 @@
 import numpy as np
 import ruamel.yaml
 from collections import OrderedDict
-from aMGSIM.library import defaults as d
 from distutils.spawn import find_executable
 from functools import partial
-
+from itertools import chain
 import sys
-import os
 import re
-import logging
-from schema import Schema, And, Optional, Or, Use, SchemaError
-import traceback
-import json
-import shutil
-import datetime
+from schema import Schema, SchemaError
 import gzip
 from mimetypes import guess_type
 from Bio import SeqIO
@@ -339,3 +332,72 @@ def _genome_size(x):
         for i, record in enumerate(SeqIO.parse(f, "fasta")):
             bp += len(record.seq)
     return bp
+
+
+def get_compression_type(filename):
+    """
+    Attempts to guess the compression (if any) on a file using the first few bytes.
+    http://stackoverflow.com/questions/13044562
+    """
+    magic_dict = {
+        "gz": (b"\x1f", b"\x8b", b"\x08"),
+        "bz2": (b"\x42", b"\x5a", b"\x68"),
+        "zip": (b"\x50", b"\x4b", b"\x03", b"\x04"),
+    }
+    max_len = max(len(x) for x in magic_dict)
+
+    unknown_file = open(filename, "rb")
+    file_start = unknown_file.read(max_len)
+    unknown_file.close()
+    compression_type = "plain"
+    for file_type, magic_bytes in magic_dict.items():
+        if file_start.startswith(magic_bytes):
+            compression_type = file_type
+    if compression_type == "bz2":
+        sys.exit("Error: cannot use bzip2 format - use gzip instead")
+        sys.exit("Error: cannot use zip format - use gzip instead")
+    return compression_type
+
+
+def get_open_func(filename):
+    if get_compression_type(filename) == "gz":
+        return gzip.open
+    else:  # plain text
+        return open
+
+
+def check_filter_conditions(filt_dict, default_filter_values, filters):
+    """A function that checks if a filter condition is valid.
+
+    Args:
+        filt_dict (dict): A dictionary with different filter conditions.
+        default_filter_values (list): A list default filter values.
+
+    Raises:
+        SchemaError: If the filter is not correct
+
+    Returns:
+        dict: A dictionary with the filter conditions.
+    """
+    # remove keys if they are not in the filter dictionary
+    filt_dict = {k: filt_dict[k] for k in filters if k in filt_dict}
+    filt_dict = {**default_filter_values, **filt_dict}
+    if all(value >= 0 for value in filt_dict.values()):
+        return filt_dict
+    else:
+        raise SchemaError()
+
+
+def fast_flatten(input_list):
+    return list(chain.from_iterable(input_list))
+
+
+def concat_df(frames):
+    COLUMN_NAMES = frames[0].columns
+    df_dict = dict.fromkeys(COLUMN_NAMES, [])
+    for col in COLUMN_NAMES:
+        extracted = (frame[col] for frame in frames)
+        # Flatten and save to df_dict
+        df_dict[col] = fast_flatten(extracted)
+    df = pd.DataFrame.from_dict(df_dict)[COLUMN_NAMES]
+    return df
