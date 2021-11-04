@@ -187,6 +187,19 @@ def run_fragSim(exe, params, seq_depth, ofile, tmp_dir, frag_ofile, fasta, debug
         sys.stderr.write(res.stdout.decode() + "\n")
 
 
+def process_params_deamSim(params):
+    parms = {}
+    for k in params:
+        if params[k] is not False:
+            if params[k] is True:
+                parms[k] = ""
+            elif type(params[k]) is list:
+                parms[k] = ",".join(map(str, params[k]))
+            else:
+                parms[k] = params[k]
+    return parms
+
+
 def process_params(params):
     parms = {}
     for k in params:
@@ -240,10 +253,55 @@ def run_art(exe, params, seqSys, fasta, ofile, read_len, library, debug):
         sys.stderr.write(res.stdout.decode() + "\n")
 
 
+def get_comments(filename):
+    encoding = guess_type(filename)[1]  # uses file extension
+    _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
+    with _open(filename) as f:
+        headiter = itertools.takewhile(lambda s: s.startswith("#"), f)
+        header = list(headiter)
+    return header
+
+
+def load_misincorporation_results(file_path):
+    """Function to read a misincorporation results file to a pandas dataframe
+
+    Args:
+        file_path (str): A file path pointing to a misincorporation results file
+    Returns:
+        pandas.DataFrame: A pandas dataframe containing the misincorporation results
+    """
+    misincorporation_comments = get_comments(file_path)
+    misincorporation_results = pd.read_csv(
+        file_path, index_col=None, comment="#", sep="\t"
+    )
+    return misincorporation_comments, misincorporation_results
+
+
+def get_misincorporation_file(misincorporation_file, out_file, taxid):
+    """Function to get the misincorporation file for a given taxid
+
+    Args:
+        misincorporation_file (str): metaDMG misincorporation results file
+        out_file (str): File to write the misincorporation file to.
+        taxid (str): Taxid to filter out
+    """
+    (
+        misincorporation_comments,
+        mdmg_misincorporation,
+    ) = load_misincorporation_results(misincorporation_file)
+    mdmg_misincorporation = mdmg_misincorporation[mdmg_misincorporation["Chr"] == taxid]
+    out = ""
+    out += "".join(misincorporation_comments)
+
+    out += mdmg_misincorporation.to_csv(index=False, sep="\t")
+
+    with open(out_file, "w", encoding="utf-8") as file:
+        file.write(out)
+    return out_file
+
+
 def run_deamSim(exe, params, ofile, fasta, libprep, debug):
-
     parms = process_params(params)
-
     if libprep == "double" and params["-mapdamage"]:
         cmd = "{exe} {params} double -o {ofile} -name {fasta}"
     elif libprep == "single" and params["-mapdamage"]:
@@ -299,6 +357,7 @@ def prepare_data_fragments(
 ):
     fa_suffix = ".fasta"
     fa_suffix_gz = ".fasta.gz"
+    txt_suffix = ".txt"
 
     fragSim_frag_suffix = ".tsv"
 
@@ -326,6 +385,14 @@ def prepare_data_fragments(
 
     fragment_data["fragSim_ofile"] = Path(tmp_dir, fragSim_fname).with_suffix(
         fa_suffix_gz
+    )
+
+    deamSim_mis_fname = "{}---{}___deamSim_misincorporation-{}".format(
+        x["comm"], x["taxon"], frag_type
+    )
+
+    fragment_data["deamSim_mis_ofile"] = Path(tmp_dir, deamSim_mis_fname).with_suffix(
+        txt_suffix
     )
 
     deamSim_fname = "{}---{}___deamSim-{}".format(x["comm"], x["taxon"], frag_type)
@@ -404,6 +471,7 @@ def generate_fragments(
     seq_depth = exp_data["n_reads"]
     files_modern = {}
     files_ancient = {}
+
     # Case when onlyAncient is False
     # Here we will need to run for modern and ancient
     if x["onlyAncient"] is False:
@@ -424,6 +492,11 @@ def generate_fragments(
                 debug=debug,
             )
             # Run deamSim
+            mis_file = get_misincorporation_file(
+                misincorporation_file=deamSim_params["-mapdamage"],
+                out_file=frag_data["deamSim_mis_ofile"],
+                taxid=x["taxId"],
+            )
             run_deamSim(
                 exe=deamSim_exe,
                 params=deamSim_params,
@@ -526,9 +599,21 @@ def generate_fragments(
             debug=debug,
         )
         # Run deamSim
+        parms = process_params_deamSim(deamSim_params)
+        if "-mapdamage" in parms.keys():
+            mis_file = get_misincorporation_file(
+                misincorporation_file=deamSim_params["-mapdamage"],
+                out_file=frag_data["deamSim_mis_ofile"],
+                taxid=x["taxId"],
+            )
+            parms = deamSim_params.copy()
+            parms["-mapdamage"] = mis_file
+        else:
+            parms = deamSim_params.copy()
+
         run_deamSim(
             exe=deamSim_exe,
-            params=deamSim_params,
+            params=parms,
             ofile=frag_data["deamSim_ofile"],
             fasta=frag_data["fragSim_ofile"],
             libprep=libprep,
@@ -874,6 +959,7 @@ def main(args):
 
     fragSim_params = config["fragSim"]
     deamSim_params = config["deamSim"]
+
     adptSim_params = config["adptSim"]
     art_params = config["art"]
     adptRem_params = config["AdapterRemoval"]

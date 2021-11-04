@@ -123,16 +123,22 @@ class Genome:
         library,
         n_reads,
         *args,
-        **kwargs
+        **kwargs,
     ):
         # Community, Taxon, Perc_rel_abund, Rank, Fasta, Genome_size
         rnd_seed = int(np.random.RandomState().randint(0, 99999, size=1))
         np.random.seed(rnd_seed)
         # ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
-        self.comm = genome[0]
-        self.taxon = genome[1]
-        self.rel_abund = genome[2]
-        self.genome_size = genome[4]
+        self.comm = genome["Community"]
+        self.taxon = genome["Taxon"]
+        self.rel_abund = genome["Perc_rel_abund"]
+        self.genome_size = genome["Genome_size"]
+        # test if key is in dictionary
+
+        if "TaxId" in genome.keys():
+            self.taxId = genome["TaxId"]
+        else:
+            self.taxId = None
         # self.library = library
         # self.read_length = max_len
         # self.seqSys = seqSys
@@ -170,7 +176,6 @@ class Genome:
         # Get fragments
         # Get average size
         coverage_ancient = selected_genomes_filt.iloc[0]["coverage_ancient"]
-
         # if str(self.onlyAncient) != "None":
         #     self.onlyAncient = bool(self.onlyAncient)
         # else:
@@ -190,17 +195,17 @@ class Genome:
                 paired = 1
             else:
                 paired = 2
-
+            # logging.debug(f"Taxon:{self.taxon}")
             read_length_ancient = int(self.fragments_ancient["avg_len"] * paired)
-
+            # logging.debug(f"read_length_ancient:{read_length_ancient}")
             # Number max of reads genome in sample
             seq_depth = int(n_reads * ((self.rel_abund / 100)))
-
+            # logging.debug(f"seq_depth:{seq_depth}")
             # Seq depth based based on the size
             seq_depth_ancient = int(
                 (coverage_ancient * self.genome_size) / read_length_ancient
             )
-
+            # logging.debug(f"seq_depth_ancient:{seq_depth_ancient}")
             if taxons.empty:
                 seq_depth_ancient_original = seq_depth_ancient
                 seq_depth_ancient = seq_depth
@@ -208,7 +213,12 @@ class Genome:
                 seq_depth_ancient_original = seq_depth_ancient
                 seq_depth = seq_depth_ancient
 
+            # logging.debug(f"seq_depth_ancient_original:{seq_depth_ancient_original}")
+            # logging.debug(f"seq_depth:{seq_depth}")
+
             fold_ancient = (seq_depth_ancient * read_length_ancient) / self.genome_size
+            # logging.debug(f"fold_ancient:{fold_ancient}")
+            # logging.debug(f"coverage_ancient:{coverage_ancient}")
 
             if seq_depth_ancient > 0:
                 self.fragments_ancient["seq_depth"] = seq_depth_ancient
@@ -225,7 +235,6 @@ class Genome:
                 self.fragments_ancient = None
 
             self.seq_depth = seq_depth
-
         elif self.onlyAncient is None:
             self.fragments_ancient = None
             self.fragments_modern = self.random_fragments(
@@ -793,9 +802,15 @@ def main(args):
 
     df = abund_table.merge(genome_table, on=["Taxon"])
 
-    genomes = df[
-        ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
-    ].values.tolist()
+    if "TaxId" in df.columns:
+        genomes = df[
+            ["Community", "TaxId", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
+        ].to_dict("records")
+    else:
+        genomes = df[
+            ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
+        ].to_dict("records")
+
     # We need to add to the taxon the proportion of ancient
     # We need to take Community,
     logging.info("Selecting random genomes...")

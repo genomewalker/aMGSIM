@@ -4,7 +4,10 @@ from multiprocessing import cpu_count
 import os
 import shutil
 import datetime
-
+from aMGSIM.library import functions as f
+import random
+import string
+import re
 
 # schema_init_ag = {
 #     '<abund_table>': [Use(open, error='abund_table should be readable')],
@@ -12,6 +15,14 @@ import datetime
 #              error='Proportion (-p) should be a float 0 < p < 1'),
 #     object: object
 # }
+
+
+def generate_random_sample_name():
+    """
+    Generate a random sample name
+    """
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
+
 
 debug = None
 
@@ -36,6 +47,10 @@ IUPACAmbiguousDNA = {
     "N",
 }
 
+default_filter_values_mdmg = {"d_max": 0.1, "phi": 500, "q": 0.25}
+default_filter_values_woltka = {"breadth_exp_ratio": 0.5, "coverage_mean": 0.1}
+tax_ranks = ["superkingdom", "phylum", "class", "order", "family", "genus", "species"]
+genome_selection_options = ["random", "most_abundant", "least_abundant"]
 # schema_init_ag = {
 #     '<abund_table>': Use(open, error='<abund_table> should be readable'),
 #     '<genome_table>': Use(open, error='genome_table should be readable'),
@@ -63,6 +78,11 @@ IUPACAmbiguousDNA = {
 # }
 
 schema_init_ag = {
+    "<config>": Use(open, error="config should be readable"),
+    object: object,
+}
+
+schema_init_w = {
     "<config>": Use(open, error="config should be readable"),
     object: object,
 }
@@ -159,6 +179,83 @@ ag_schema_config = {
     ),
     Optional("single-cov", default=False): And(
         bool, error="The single option should be True/False"
+    ),
+    object: object,
+}
+
+w_schema_config = {
+    "genome_paths": And(
+        Use(lambda x: f.get_open_func(x)(x, "rt")),
+        error="genome_paths should be readable",
+    ),
+    "woltka_stats": And(
+        Use(lambda x: f.get_open_func(x)(x, "rt")),
+        error="Problem finding the abundance table file",
+    ),
+    "woltka_profiling_results": And(
+        Use(lambda x: f.get_open_func(x)(x, "rt")),
+        error="Problem finding the custom genome composition table file",
+    ),
+    "mdmg_results": And(
+        Use(lambda x: f.get_open_func(x)(x, "rt")),
+        error="mdmg_results should be readable",
+    ),
+    Optional("woltka_stats_filter", default=default_filter_values_woltka,): And(
+        Use(
+            lambda x: f.check_filter_conditions(
+                x,
+                default_filter_values_woltka,
+                filters=["breadth_exp_ratio", "coverage_mean"],
+            )
+        ),
+        error="There's a problem with the filter. Please check the keys in the dict are valid and that all the values are >= 0",
+    ),
+    # "mdmg_misincorporation": And(
+    #     Use(lambda x: f.get_open_func(x)(x, "rt")),
+    #     error="mdmg_misincorporation should be readable",
+    # ),
+    Optional("mdmg_filter_conditions", default=default_filter_values_mdmg,): And(
+        Use(
+            lambda x: f.check_filter_conditions(
+                x, default_filter_values_mdmg, filters=["d_max", "phi", "q"]
+            )
+        ),
+        error="There's a problem with the filter. Please check the keys in the dict are valid and that all the values are >= 0",
+    ),
+    Optional("taxonomic_rank", default="genus"): And(
+        str,
+        lambda x: x in tax_ranks,
+        error=f"Invalid taxonomic ranks. Pick one valid from {', '.join(str(x) for x in tax_ranks)}",
+    ),
+    Optional("max_genomes_nondamaged", default=10): Or(
+        None,
+        And(Use(int), lambda max_genomes_nondamaged: max_genomes_nondamaged > 0),
+        error="The number of non-damaged genomes selected should be greater than 0",
+    ),
+    Optional("max_genomes_damaged", default=10): Or(
+        None,
+        And(Use(int), lambda max_genomes_damaged: max_genomes_damaged > 0),
+        error="The number of damaged genomes selected should be greater than 0",
+    ),
+    Optional("max_genomes_nondamaged_selection", default="most_abundant"): And(
+        str,
+        lambda x: x in genome_selection_options,
+        error=f"Invalid option. Pick one valid from {', '.join(str(x) for x in tax_ranks)}",
+    ),
+    Optional("cpus", default=1): Or(
+        None,
+        And(Use(int), lambda n: 0 < n < cpu_count() - 1),
+        error="Number of CPUs should be integer between 0 < N < {}".format(
+            cpu_count() - 1
+        ),
+    ),
+    Optional("sample_name", default=generate_random_sample_name()): Or(
+        None,
+        And(
+            Use(str),
+            lambda x: re.match("^[A-Za-z0-9_-]*$", x),
+            error="The sample name contains invalid characters. Only  alphanumeric characters and dash and underscore characters are allowed",
+        ),
     ),
     object: object,
 }

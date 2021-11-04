@@ -1,6 +1,5 @@
 from Bio import SeqIO, Seq
 from bisect import bisect_left
-import difflib
 import re
 import pyranges as pr
 import Bio.Data.CodonTable
@@ -10,7 +9,6 @@ import gzip
 from mimetypes import guess_type
 from functools import partial
 from pathlib import Path
-from biolib.external.prodigal import Prodigal
 from pandarallel import pandarallel
 
 
