@@ -55,8 +55,8 @@ Description:
     # dict of all subcommands
     cmds = {
         "communities": Communities,
-        "ancient-genomes": AncientGenomes,
         "woltka2sim": Woltka2Sim,
+        "ancient-genomes": AncientGenomes,
         "ancient-reads": ReadsAncient,
         "protein-analysis": ProteinAnalysis,
     }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-ancient-genomes: Estimate coverage, depth and other properties for each genome
+woltka2sim: Estimate coverage, depth and other properties for each genome
                  in sample processed with WOLTKA
 
 Usage:

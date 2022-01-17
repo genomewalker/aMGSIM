@@ -40,8 +40,9 @@ pip install -e .
 
 ## Usage
 
-aMGSIM uses as a starting point the `communities` subcommand from [MGSIM](https://github.com/nick-youngblut/MGSIM/) and then integrates three new subcommands:
+aMGSIM incorporates three new subcommands to generate synthetic metagenomic reads:
 
+- **woltka2sim**: Estimate coverage, depth and other properties for each genome in sample processed with WOLTKA
 - **ancient-genomes**: Estimate coverage, depth and other properties for each genome in each synthetic community
 - **ancient-reads**: Simulate ancient reads for each taxon in each synthetic community
 - **protein-analysis**: Tracking damage to the codon positions of each simulated read. 
@@ -52,10 +53,76 @@ You can access the list of commands by:
 $ aMGSIM --list
 
 Available Commands:
-communities | ancient-genomes | ancient-reads | protein-analysis
+communities | woltka2sim | ancient-genomes | ancient-reads | protein-analysis
+```
+We have two different approaches to generate the synthetic communities:
+
+1. We can use empirical results from [WOLTKA](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) and [metaDMG](#) as shown [here](#) with the subcommand `woltka2sim`.
+2. We can use the subcommand `communities` from [MGSIM](https://github.com/nick-youngblut/MGSIM/)
+
+
+> We recommend to use the woltka2sim subcommand
+
+
+To use the taxonomic profiling of WOLTKA and metaDMG, you will need the following files:
+
+- A file containing the paths to the genomes used for mapping the reads. A TSV file with the `name` and `location of the genomes' fasta files like the file [genome_table.tsv](examples/data/genome-paths-list.tsv) 
+- A file containing the mapping stats after filtering the BAM files with [bam-filter](https://github.com/genomewalker/bam-filter) before inferring the OGUs with WOLTKA
+- The WOLTKA abundances file containing the abundances of each OGU/genus/phylum.
+- The metaDMG CSV ouput for the sample and the misincorporation file.
+- The taxonomy dump files (names and nodes) used for WOLTKA and metaDMG.
+
+
+Then you can use the command as follows:
+
+```bash
+aMGSIM woltka2sim agw-config.yaml
 ```
 
-First, we need to generate some synthetic communities. aMGSIM wraps the subcommand `communities` from [MGSIM](https://github.com/nick-youngblut/MGSIM/) to 
+And example of the config file can be found here [**aw-config.yaml](examples/conifg/aw-config.yaml) associated to the files described above are:
+
+```yaml
+# TSV file with the name of the genome and the fasta location of the references used in WOLTKA, the file has no header and has the following format: name\tfasta_location
+genome_paths: genome-paths-list.tsv
+# Nodes and names dumps used for the WOLTKA analysis
+names_dmp: names-mdmg.dmp
+nodes_dmp: nodes-mdmg.dmp
+# Sample name
+sample_name: "0e59dd2155"
+# Statistics of the mapping results from the WOLTKA analysis
+woltka_stats: 0e59dd2155.woltka.dedup_stats-filtered.tsv.gz
+# Filter options for the WOLTKA table
+woltka_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
+# WOLTKA abundance table
+woltka_profiling_results: 0e59dd2155.woltka-none.tsv.gz
+# Results of the metaDMG analysis
+mdmg_results: 0e59dd2155.woltka-mdmg.weight-0.csv.gz
+# Filter conditions to identify damaged references
+mdmg_filter_conditions: { "d_max": 0.1, "phi": 500, "q": 0.25 }
+# Taxonomic scope of the metaDMG analysis
+taxonomic_rank: "species"
+# Number of non-damaged genomes
+max_genomes_nondamaged: 10
+# How to select the non-damaged genomes: random, most_abundant, least_abundant
+max_genomes_nondamaged_selection: "random"
+# Number of damaged genomes
+max_genomes_damaged: 10
+# How to select the non-damaged genomes: random, most_abundant, least_abundant
+max_genomes_damaged_selection: "random"
+# Should we reestimate the abundances after the genome selection?
+use_restimated_proportions: True
+# Number of cpus. [Default: 1]
+cpus: 16
+
+```
+This will create all the files need for the next step:
+
+- **0e59dd2155.communities.tsv**: This file contains the estimated abundance table for the synthetic community. Columns are `Community`, `Taxon`, `Rank` and `Perc_rel_abund`
+- **0e59dd2155.filepaths.tsv**: This file contains the file paths for the reference genomes used in the WOLTKA analysis. Columns are `Taxon`, `TaxId`, `Accession` and `Fasta`
+- **0e59dd2155.genome-compositions.tsv**: This file is the one controlling how the genomes are going to be processed and will contain the empirical values. We can change them to spike certain taxa to very high or very low coverage values. Anything added to this file (all genomes by default) will avoid the random generation of coverage, sequencing depth and other vlaues. Columns are `Taxon`, `Community`, `Coverage` and `onlyAncient`
+  
+
+If you want to use the `communities` subcommand:
 
 ```
 aMGSIM communities --n-comm 3 examples/data/genome_list.txt example
@@ -73,8 +140,7 @@ The subcommand `communities` will generate three synthetic communities. From the
 - **_example_\__wAbund.txt**: taxon relative abundances weighted by genome size this is the fraction of the DNA pool for each taxon
 - **_example_\__beta-div.txt**: beta diversity among communities see the beta-div parameter for selecting beta-diversity measures
 
-
-Once we have the synthetic communities' composition, we can create the ancient and modern partitions for each sample. We will use the subcommand `ancient-genomes`:
+When these files are in place we can call the second command that will generate the synthetic community. This command will use the config file `ag-config.yaml` will set the basic parameters to generate the fragment needed for the simulations. Here is where you need to decide if we use paired/single end, which machine, read length, modal length of the damaged/non-damaged fraction and the libprep method. We will use the subcommand `ancient-genomes`:
 
 ```
 $ aMGSIM ancient-genomes -h
