@@ -66,7 +66,7 @@ We have two different approaches to generate the synthetic communities:
 
 To use the taxonomic profiling of WOLTKA and metaDMG, you will need the following files:
 
-- A file containing the paths to the genomes used for mapping the reads. A TSV file with the `name` and `location of the genomes' fasta files like the file [genome_table.tsv](examples/data/genome-paths-list.tsv) 
+- A file containing the paths to the genomes used for mapping the reads. A TSV file with the `name` and `location of the genomes` fasta files like the file [genome_table.tsv](examples/data/genome-paths-list.tsv) 
 - A file containing the mapping stats after filtering the BAM files with [bam-filter](https://github.com/genomewalker/bam-filter) before inferring the OGUs with WOLTKA
 - The WOLTKA abundances file containing the abundances of each OGU/genus/phylum.
 - The metaDMG CSV ouput for the sample and the misincorporation file.
