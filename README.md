@@ -79,7 +79,7 @@ Then you can use the command as follows:
 aMGSIM woltka2sim agw-config.yaml
 ```
 
-And example of the config file can be found here [**aw-config.yaml](examples/conifg/aw-config.yaml) associated to the files described above are:
+And example of the config file can be found here [**aw-config.yaml**](examples/conifg/aw-config.yaml) associated to the files described above are:
 
 ```yaml
 # TSV file with the name of the genome and the fasta location of the references used in WOLTKA, the file has no header and has the following format: name\tfasta_location
