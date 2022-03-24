@@ -71,7 +71,11 @@ def exceptionHandler(
         print("{}: {}".format(exception_type.__name__, exception))
 
 
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def obj_dict(obj):
@@ -867,8 +871,16 @@ def main(args):
     else:
         p = Pool(nproc)
         ancient_genomes_data = list(
-            tqdm.tqdm(p.imap_unordered(func, genomes), total=len(genomes))
+            tqdm.tqdm(
+                p.imap_unordered(func, genomes),
+                total=len(genomes),
+                leave=False,
+                ncols=100,
+                desc=f"Genomes processed",
+            )
         )
+        p.close()
+        p.join()
         # ancient_genomes_data = p.map(func, genomes)
     file_name = Path(filename.name).stem
     dir_name = Path(filename.name).parent

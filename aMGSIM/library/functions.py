@@ -309,6 +309,7 @@ def load_genome_table(in_file, nproc=1):
         p = Pool(nproc)
         df["Genome_size"] = p.map(_genome_size, [x for i, x in df.iterrows()])
         p.close()
+        p.join()
     else:
         df["Genome_size"] = [_genome_size(x) for i, x in df.iterrows()]
 
@@ -401,3 +402,19 @@ def concat_df(frames):
         df_dict[col] = fast_flatten(extracted)
     df = pd.DataFrame.from_dict(df_dict)[COLUMN_NAMES]
     return df
+
+
+def initializer(init_data):
+    global parms
+    parms = init_data
+
+
+# from https://stackoverflow.com/questions/53751050/python-multiprocessing-understanding-logic-behind-chunksize/54032744#54032744
+def calc_chunksize(n_workers, len_iterable, factor=4):
+    """Calculate chunksize argument for Pool-methods.
+    Resembles source-code within `multiprocessing.pool.Pool._map_async`.
+    """
+    chunksize, extra = divmod(len_iterable, n_workers * factor)
+    if extra:
+        chunksize += 1
+    return chunksize

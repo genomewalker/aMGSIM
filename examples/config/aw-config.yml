@@ -6,13 +6,13 @@ nodes_dmp: nodes-mdmg.dmp
 # Sample name
 sample_name: "0e59dd2155"
 # Statistics of the mapping results from the WOLTKA analysis
-woltka_stats: 0e59dd2155.woltka.dedup_stats-filtered.tsv.gz
+filterBAM_stats: 0e59dd2155.filterBAM.dedup_stats-filtered.tsv.gz
 # Filter options for the WOLTKA table
-woltka_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
+filterBAM_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
 # WOLTKA abundance table
-woltka_profiling_results: 0e59dd2155.woltka-none.tsv.gz
+filterBAM_profiling_results: 0e59dd2155.filterBAM-none.tsv.gz
 # Results of the metaDMG analysis
-mdmg_results: 0e59dd2155.woltka-mdmg.weight-0.csv.gz
+mdmg_results: 0e59dd2155.filterBAM-mdmg.weight-0.csv.gz
 # Filter conditions to identify damaged references
 mdmg_filter_conditions: { "d_max": 0.1, "phi": 500, "q": 0.25 }
 # Taxonomic scope of the metaDMG analysis

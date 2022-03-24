@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 """
-woltka2sim: Estimate coverage, depth and other properties for each genome
-                 in sample processed with WOLTKA
+filterBAM2sim: Estimate coverage, depth and other properties for each genome
+                 in sample processed with bam-filter
 
 Usage:
-  woltka2sim [options] <config>
-  woltka2sim -h | --help
-  woltka2sim --version
+  filterBAM2sim [options] <config>
+  filterBAM2sim -h | --help
+  filterBAM2sim --version
 
 Options:
   <config>       Config parameters
@@ -17,14 +17,6 @@ Options:
 
 Description:
   Simulating ancient reads for each taxon in each synthetic community
-
-  config
-  ------
-  * tab-delimited
-  * must contain 3 columns
-    * "Community" = community ID (ie., sample ID)
-    * "Taxon" = taxon name
-    * "Perc_rel_abund" = percent relative abundance of the taxon
 
   Output
   ------
@@ -49,14 +41,14 @@ import re
 # application
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f
-from aMGSIM.library import woltka_functions as w
+from aMGSIM.library import filterBAM_functions as w
 import datetime
 import tqdm
 from collections import OrderedDict
 from aMGSIM import __version__
 import taxopy as txp
 
-debug = None
+debug = False
 
 
 def exceptionHandler(
@@ -71,9 +63,6 @@ def exceptionHandler(
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
-
-
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
 
 
 def generate_genome_compositions(df, taxdb, taxonomic_rank, sample_name):
@@ -157,43 +146,6 @@ def generate_genome_paths(df, genome_paths, taxdb, taxonomic_rank):
     return df_selected
 
 
-def select_taxa(df, is_damaged=False, mode="most_abundant", n_taxa=10):
-    """Function to select taxa to be simulated.
-
-    Args:
-        df (pandas.DataFrame): [description]
-        is_damaged (bool, optional): [description]. Defaults to False.
-        mode (str, optional): [description]. Defaults to 'most_abundant'.
-        n_taxa (int, optional): [description]. Defaults to 100.
-
-    Raises:
-        ValueError: Fails if the mode is not valid.
-    """
-    if mode == "most_abundant":
-        if is_damaged:
-            df = df[df["is_damaged"] != True].sort_values(by="rank", ascending=True)
-        else:
-            df = df[df["is_damaged"] == True].sort_values(by="rank", ascending=True)
-        # select n rows from pandas DataFrame
-        df = df.head(n_taxa)
-    elif mode == "least_abundant":
-        if is_damaged:
-            df = df[df["is_damaged"] != True].sort_values(by="rank", ascending=False)
-        else:
-            df = df[df["is_damaged"] == True].sort_values(by="rank", ascending=False)
-        df = df.head(n_taxa)
-    elif mode == "random":
-        if is_damaged:
-            df = df[df["is_damaged"] != True].sample(n=n_taxa)
-        else:
-            df = df[df["is_damaged"] == True].sample(n=n_taxa)
-    else:
-        raise ValueError(
-            'mode should be one of "most_abundant", "random", "least_abundant"'
-        )
-    return df
-
-
 def create_output_files(prefix):
     # create output files
     out_files = {
@@ -204,16 +156,25 @@ def create_output_files(prefix):
     return out_files
 
 
+log = logging.getLogger("my_logger")
+
+
 def main(args):
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+    )
     # simulating reads
     global debug
     if args["--debug"]:
         debug = True
     else:
-        debug = None
+        debug
+    log.setLevel(logging.DEBUG if debug else logging.INFO)
 
     sys.excepthook = exceptionHandler
-
     # simulating reads
     args = f.validate_schema(args, d.schema_init_w, debug)
     config = f.get_config(
@@ -221,83 +182,101 @@ def main(args):
     )
     taxonomic_rank = config["taxonomic_rank"]
     # load tables
-    logging.info("Loading genome paths file...")
+    log.info("Loading genome paths file...")
     genome_paths = w.load_genome_paths(config["genome_paths"])
 
-    # load taxonomy
+    log.info("Loading filterBAM stats file...")
+    filterBAM_stats = w.load_filterBAM_stats_table(config["filterBAM_stats"])
+    filterBAM_stats_n = filterBAM_stats.shape[0]
+
+    log.info("Generating taxonomic information...")
     taxdb = txp.TaxDb(
         nodes_dmp=config["nodes_dmp"], names_dmp=config["names_dmp"], keep_files=True
     )
 
-    logging.info("Loading woltka stats file...")
-    woltka_stats = w.load_woltka_stats_table(config["woltka_stats"])
-    woltka_stats_n = woltka_stats.shape[0]
-    woltka_stats = w.filter_woltka_taxa(
-        df=woltka_stats,
-        filter_conditions=config["woltka_filter_conditions"],
+    taxonomy_info, tax_ranks = w.get_taxonomy_info(
+        refids=filterBAM_stats["reference"].values, taxdb=taxdb, nprocs=config["cpus"]
     )
-    logging.info(f"Kept {woltka_stats.shape[0]} taxa from {woltka_stats_n}")
+    filterBAM_stats["taxid"] = filterBAM_stats["reference"].apply(
+        lambda x: taxonomy_info[x]["taxid"]
+    )
+    filterBAM_stats["taxrank"] = filterBAM_stats["reference"].apply(
+        lambda x: taxonomy_info[x][taxonomic_rank]
+    )
 
-    logging.info("Loading woltka profiling results...")
-    woltka_profiling_results = w.load_woltka_profiling_table(
-        config["woltka_profiling_results"]
+    filterBAM_stats = w.filter_filterBAM_taxa(
+        df=filterBAM_stats,
+        filter_conditions=config["filterBAM_filter_conditions"],
     )
-    woltka_profiling_results = woltka_profiling_results[
-        woltka_profiling_results["reference"].isin(
-            woltka_stats["reference"].unique().tolist()
-        )
-    ]
-    logging.info("Loading metaDMG results...")
+    log.info(f"Kept {filterBAM_stats.shape[0]} taxa from {filterBAM_stats_n}")
+
+    log.info("Loading metaDMG results...")
     mdmg_results = w.load_mdmg_results(config["mdmg_results"])
     # find which taxon are damaged
+
     damaged_taxa = w.filter_damaged_taxa(
         df=mdmg_results,
         filter_conditions=config["mdmg_filter_conditions"],
         taxonomic_rank=taxonomic_rank,
     )
-    logging.info(f"Found {damaged_taxa.shape[0]} damaged taxa")
 
-    logging.info("Getting proportion at rank ...")
-    genome_abundance = w.aggregate_woltka_results_by_rank(
-        df=woltka_profiling_results, rank=taxonomic_rank
-    )
+    # damaged_taxa["taxrank"] = damaged_taxa["reference"].apply(
+    #     lambda x: taxonomy_info[x][taxonomic_rank]
+    # )
+
     # add column to genome_abundance with damaged status
-    genome_abundance["is_damaged"] = (
-        genome_abundance[[taxonomic_rank]]
-        .isin(damaged_taxa["tax_id"].to_list())
+    filterBAM_stats["is_damaged"] = (
+        filterBAM_stats["reference"]
+        .isin(damaged_taxa["reference"].to_list())
         .astype(str)
     )
-    genome_abundance["is_damaged"].replace(
-        {"None": None, "True": True, "False": None, np.nan: None}, inplace=True
+
+    filterBAM_stats["is_damaged"].replace(
+        {"None": False, "True": True, np.nan: False, "False": False}, inplace=True
     )
+    filterBAM_stats["proportion"] = 100 * (
+        filterBAM_stats["tax_abund_read"] / filterBAM_stats["tax_abund_read"].sum()
+    )
+
+    log.info(f"Found {damaged_taxa.shape[0]} damaged taxa")
+
+    log.info("Getting proportion at rank ...")
+    rank_abundance = w.aggregate_filterBAM_results_by_rank(
+        df=filterBAM_stats, rank=taxonomic_rank
+    )
+
     # Select genomes that are not damaged based on the config
-    non_damaged_genomes = (
-        select_taxa(
-            genome_abundance,
-            is_damaged=False,
-            mode=config["max_genomes_nondamaged_selection"],
-            n_taxa=config["max_genomes_nondamaged"],
-        )
-        .merge(woltka_profiling_results.drop("counts", axis=1), on=taxonomic_rank)
-        .merge(woltka_stats, on="reference")
+    log.info("Selecting genomes that are not damaged")
+    non_damaged_genomes = w.select_taxa(
+        rank_abundance,
+        is_damaged=False,
+        mode=config["max_genomes_nondamaged_selection"],
+        n_taxa=config["max_genomes_nondamaged"],
+        tax_rank=taxonomic_rank,
+        stats=filterBAM_stats,
     )
-    damaged_genomes = (
-        select_taxa(
-            genome_abundance,
-            is_damaged=True,
-            mode=config["max_genomes_damaged_selection"],
-            n_taxa=config["max_genomes_damaged"],
-        )
-        .merge(woltka_profiling_results.drop("counts", axis=1), on=taxonomic_rank)
-        .merge(woltka_stats, on="reference")
+    log.info("Selecting genomes that are damaged")
+    damaged_genomes = w.select_taxa(
+        rank_abundance,
+        is_damaged=True,
+        mode=config["max_genomes_damaged_selection"],
+        n_taxa=config["max_genomes_damaged"],
+        tax_rank=taxonomic_rank,
+        stats=filterBAM_stats,
     )
 
-    logging.info("Re-estimating proportions...")
+    log.info("Re-estimating proportions...")
+    if non_damaged_genomes.shape[0] > 0:
+        genomes = f.concat_df([damaged_genomes, non_damaged_genomes])
+    else:
+        genomes = damaged_genomes
 
-    genomes = f.concat_df([damaged_genomes, non_damaged_genomes])
-
-    genomes["proportion_new"] = 100 * (genomes["counts"] / genomes["counts"].sum())
-    logging.info("Generating files for aMGSIM")
+    genomes["proportion_new"] = 100 * (
+        genomes["tax_abund_read"] / genomes["tax_abund_read"].sum()
+    )
+    print(genomes.sort_values("proportion_new", ascending=False))
+    exit()
+    log.info("Generating files for aMGSIM")
     # generate aMGSIM input files
     # community file
     community_file = generate_community_file(
@@ -319,7 +298,7 @@ def main(args):
         genome_paths=genome_paths,
         taxonomic_rank=taxonomic_rank,
     )
-    logging.info(f"Writing results")
+    log.info(f"Writing results")
     out_files = create_output_files(prefix=config["sample_name"])
     community_file.to_csv(out_files["communities"], sep="\t", index=False)
     genome_paths_file.to_csv(out_files["paths"], sep="\t", index=False)

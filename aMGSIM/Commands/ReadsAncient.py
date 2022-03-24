@@ -86,11 +86,15 @@ def exceptionHandler(
         print("{}: {}".format(exception_type.__name__, exception))
 
 
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
+log = logging.getLogger("my_logger")
+log.setLevel(logging.INFO)
 
 
-# logging
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def _rename_name(x, output_dir):
@@ -147,7 +151,17 @@ def rename_genomes(genome_table, cpus, output_dir):
         files = list(map(func, genomes))
     else:
         p = Pool(cpus)
-        files = list(tqdm.tqdm(p.imap_unordered(func, genomes), total=len(genomes)))
+        files = list(
+            tqdm.tqdm(
+                p.imap_unordered(func, genomes),
+                total=len(genomes),
+                leave=False,
+                ncols=100,
+                desc=f"Genomes processed",
+            )
+        )
+        p.close()
+        p.join()
     df = pd.DataFrame.from_records(
         files, columns=["Taxon", "Fasta", "Genome_size", "Fasta_normalized"]
     )
@@ -1025,8 +1039,13 @@ def main(args):
             tqdm.tqdm(
                 p.imap_unordered(func, ancient_genomes_data),
                 total=len(ancient_genomes_data),
+                leave=False,
+                ncols=100,
+                desc=f"Genomes processed",
             )
         )
+        p.close()
+        p.join()
         # fragments_data = process_map(func, ancient_genomes_data, max_workers=config_params['cpus'])
     ancient_files = list(filter(None, map(lambda x: x.ancient, files)))
     modern_files = list(filter(None, map(lambda x: x.modern, files)))
@@ -1052,9 +1071,16 @@ def main(args):
     else:
         p = Pool(config_params["cpus"])
         files = list(
-            tqdm.tqdm(p.imap_unordered(func, comm_files), total=len(comm_files))
+            tqdm.tqdm(
+                p.imap_unordered(func, comm_files),
+                total=len(comm_files),
+                leave=False,
+                ncols=100,
+                desc=f"Files processed",
+            )
         )
-
+        p.close()
+        p.join()
     df = pd.DataFrame(files).sort_values("comm")
 
     read_files = {}

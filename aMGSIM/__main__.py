@@ -3,6 +3,8 @@
 # import
 ## batteries
 import sys
+import logging
+import time
 
 ## 3rd party
 from docopt import docopt
@@ -14,7 +16,7 @@ from aMGSIM.Commands import (
     AncientGenomes,
     ReadsAncient,
     ProteinAnalysis,
-    Woltka2Sim,
+    FilterBAM2sim,
 )
 from aMGSIM import __version__
 
@@ -55,7 +57,7 @@ Description:
     # dict of all subcommands
     cmds = {
         "communities": Communities,
-        "woltka2sim": Woltka2Sim,
+        "filterBAM2sim": FilterBAM2sim,
         "ancient-genomes": AncientGenomes,
         "ancient-reads": ReadsAncient,
         "protein-analysis": ProteinAnalysis,

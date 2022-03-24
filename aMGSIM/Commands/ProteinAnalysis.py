@@ -102,7 +102,11 @@ def exceptionHandler(
         print("{}: {}".format(exception_type.__name__, exception))
 
 
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
+logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
 
 def combine_files(x, tmp_damage, out_dir):
@@ -230,6 +234,9 @@ def main(args):
             tqdm.tqdm(
                 p.imap_unordered(func, comm_files),
                 total=len(comm_files),
+                leave=False,
+                ncols=100,
+                desc=f"Files processed",
             )
         )
     logging.info("Combining files...")
@@ -247,6 +254,9 @@ def main(args):
             tqdm.tqdm(
                 p.imap_unordered(func, comms),
                 total=len(comms),
+                leave=False,
+                ncols=100,
+                desc=f"Files processed",
             )
         )
     # for comm in comms:
