@@ -63,15 +63,15 @@ def exceptionHandler(
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
-        print("\n*** Error: Please use --debug to see full traceback.")
+        log.error("Please use --debug to see full traceback.")
 
+
+def generate_genome_compositions(df, sample_name):
 
     """Function to generate a genome composition file compatible with aMGSIM.
 
     Args:
         df (pandas.DataFrame): A dataframe with the genome information.
-        taxdb (dict): A dict with the taxonomic information
-        taxonomic_rank (str): Selected taxonomic scope
         sample_name (str): Sample name
 
     Returns:
