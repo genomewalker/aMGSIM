@@ -63,9 +63,9 @@ def exceptionHandler(
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
+        print("\n*** Error: Please use --debug to see full traceback.")
 
 
-def generate_genome_compositions(df, taxdb, taxonomic_rank, sample_name):
     """Function to generate a genome composition file compatible with aMGSIM.
 
     Args:
@@ -77,10 +77,7 @@ def generate_genome_compositions(df, taxdb, taxonomic_rank, sample_name):
     Returns:
         pandas.DataFrame: A table with the genome information.
     """
-    df_selected = df[[taxonomic_rank, "coverage_mean", "is_damaged"]].copy()
-    df_selected["Taxon"] = df_selected[taxonomic_rank].apply(
-        lambda x: re.sub("[^0-9a-zA-Z]+", "_", taxdb.taxid2name[x])
-    )
+    df_selected = df[["Taxon", "coverage_mean", "is_damaged"]].copy()
     df_selected.loc[:, "Community"] = sample_name
     df_selected = df_selected[["Taxon", "Community", "coverage_mean", "is_damaged"]]
     df_selected.columns = ["Taxon", "Community", "Coverage", "onlyAncient"]
@@ -90,9 +87,7 @@ def generate_genome_compositions(df, taxdb, taxonomic_rank, sample_name):
     return df_selected
 
 
-def generate_community_file(
-    df, sample_name, taxonomic_rank, taxdb, use_restimated_proportions
-):
+def generate_community_file(df, sample_name, use_restimated_proportions):
     """Function to create a community file compatible with aMGSIM.
 
     Args:
@@ -100,21 +95,14 @@ def generate_community_file(
     """
     # create a new DataFrame with the selected taxa
     if use_restimated_proportions:
-        df_selected = df[[taxonomic_rank, "proportion_new"]].copy()
+        df_selected = df[["reference", "Taxon", "proportion_new"]].copy()
         df_selected.loc[:, "Community"] = sample_name
-        df_selected["Taxon"] = df_selected[taxonomic_rank].apply(
-            lambda x: re.sub("[^0-9a-zA-Z]+", "_", taxdb.taxid2name[x])
-        )
         df_selected["Rank"] = np.arange(len(df_selected)) + 1
         df_selected = df_selected[["Community", "Taxon", "Rank", "proportion_new"]]
         df_selected.columns = ["Community", "Taxon", "Rank", "Perc_rel_abund"]
-
     else:
-        df_selected = df[[taxonomic_rank, "proportion"]].copy()
+        df_selected = df[["reference", "Taxon", "proportion"]].copy()
         df_selected.loc[:, "Community"] = sample_name
-        df_selected["Taxon"] = df_selected[taxonomic_rank].apply(
-            lambda x: re.sub("[^0-9a-zA-Z]+", "_", taxdb.taxid2name[x])
-        )
         df_selected["Rank"] = np.arange(len(df_selected)) + 1
         df_selected = df_selected[["Community", "Taxon", "Rank", "proportion"]]
         df_selected.columns = ["Community", "Taxon", "Rank", "Perc_rel_abund"]
@@ -122,7 +110,7 @@ def generate_community_file(
     return df_selected
 
 
-def generate_genome_paths(df, genome_paths, taxdb, taxonomic_rank):
+def generate_genome_paths(df, genome_paths):
     """Function to generate a genome paths file compatible with aMGSIM.
 
     Args:
@@ -136,12 +124,9 @@ def generate_genome_paths(df, genome_paths, taxdb, taxonomic_rank):
     """
     # Taxon	Accession	Fasta
     df_selected = (
-        df[["reference", taxonomic_rank]].copy().merge(genome_paths, on="reference")
+        df[["reference", "taxid", "Taxon"]].copy().merge(genome_paths, on="reference")
     )
-    df_selected["Taxon"] = df_selected[taxonomic_rank].apply(
-        lambda x: re.sub("[^0-9a-zA-Z]+", "_", taxdb.taxid2name[x])
-    )
-    df_selected = df_selected[["Taxon", taxonomic_rank, "reference", "path"]]
+    df_selected = df_selected[["Taxon", "taxid", "reference", "path"]]
     df_selected.columns = ["Taxon", "TaxId", "Accession", "Fasta"]
     return df_selected
 
@@ -171,7 +156,7 @@ def main(args):
     if args["--debug"]:
         debug = True
     else:
-        debug
+        debug = False
     log.setLevel(logging.DEBUG if debug else logging.INFO)
 
     sys.excepthook = exceptionHandler
@@ -197,6 +182,7 @@ def main(args):
     taxonomy_info, tax_ranks = w.get_taxonomy_info(
         refids=filterBAM_stats["reference"].values, taxdb=taxdb, nprocs=config["cpus"]
     )
+
     filterBAM_stats["taxid"] = filterBAM_stats["reference"].apply(
         lambda x: taxonomy_info[x]["taxid"]
     )
@@ -274,30 +260,31 @@ def main(args):
     genomes["proportion_new"] = 100 * (
         genomes["tax_abund_read"] / genomes["tax_abund_read"].sum()
     )
-    print(genomes.sort_values("proportion_new", ascending=False))
-    exit()
+
+    genomes["Taxon"] = genomes["reference"].apply(
+        lambda x: re.sub(
+            "[^0-9a-zA-Z]+", "_", re.sub("s__", "", taxonomy_info[x]["species"])
+        )
+    )
+
     log.info("Generating files for aMGSIM")
     # generate aMGSIM input files
     # community file
     community_file = generate_community_file(
         genomes,
         sample_name=config["sample_name"],
-        taxonomic_rank=taxonomic_rank,
-        taxdb=taxdb,
         use_restimated_proportions=config["use_restimated_proportions"],
     )
+
     genome_compositions = generate_genome_compositions(
         df=genomes,
         sample_name=config["sample_name"],
-        taxdb=taxdb,
-        taxonomic_rank=taxonomic_rank,
     )
     genome_paths_file = generate_genome_paths(
         df=genomes,
-        taxdb=taxdb,
         genome_paths=genome_paths,
-        taxonomic_rank=taxonomic_rank,
     )
+
     log.info(f"Writing results")
     out_files = create_output_files(prefix=config["sample_name"])
     community_file.to_csv(out_files["communities"], sep="\t", index=False)

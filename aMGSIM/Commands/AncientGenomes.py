@@ -54,7 +54,7 @@ import tqdm
 from collections import OrderedDict
 from aMGSIM import __version__
 
-debug = None
+debug = False
 
 
 def exceptionHandler(
@@ -68,7 +68,9 @@ def exceptionHandler(
         # raise
         debug_hook(exception_type, exception, traceback)
     else:
-        print("{}: {}".format(exception_type.__name__, exception))
+        print(f"{exception_type.__name__}: {exception}")
+        print("\n*** Error: Please use --debug to see full traceback.")
+
 
 
 logging.basicConfig(
@@ -139,10 +141,10 @@ class Genome:
         self.genome_size = genome["Genome_size"]
         # test if key is in dictionary
 
-        if "TaxId" in genome.keys():
-            self.taxId = genome["TaxId"]
+        if "Accession" in genome.keys():
+            self.accession = genome["Accession"]
         else:
-            self.taxId = None
+            self.accession = None
         # self.library = library
         # self.read_length = max_len
         # self.seqSys = seqSys
@@ -609,7 +611,8 @@ def applyParallel(dfGrouped, func, nproc, parms):
 
 
 def _get_read_abundances(self, n_reads):
-    df = pd.DataFrame()
+    # df = pd.DataFrame()
+    dfs = []
     data_dict = OrderedDict()
     for p in self:
         if p.fragments_ancient is None:
@@ -618,28 +621,37 @@ def _get_read_abundances(self, n_reads):
             data_dict["frag_type"] = "ancient"
             data_dict["seq_depth"] = 0
             _df = pd.DataFrame([data_dict], columns=data_dict.keys())
-            df = df.append(_df, ignore_index=True, sort=False)
+            # df = df.append(_df, ignore_index=True, sort=False)
+            # df = f.concat_df([df, _df])
+            dfs.append(_df)
         else:
             data_dict["comm"] = str(p.comm)
             data_dict["taxon"] = p.taxon
             data_dict["frag_type"] = "ancient"
             data_dict["seq_depth"] = p.fragments_ancient["seq_depth"]
             _df = pd.DataFrame([data_dict], columns=data_dict.keys())
-            df = df.append(_df, ignore_index=True, sort=False)
+            # df = df.append(_df, ignore_index=True, sort=False)
+            # df = f.concat_df([df, _df])
+            dfs.append(_df)
         if p.fragments_modern is None:
             data_dict["comm"] = str(p.comm)
             data_dict["taxon"] = p.taxon
             data_dict["frag_type"] = "modern"
             data_dict["seq_depth"] = 0
             _df = pd.DataFrame([data_dict], columns=data_dict.keys())
-            df = df.append(_df, ignore_index=True, sort=False)
+            # df = df.append(_df, ignore_index=True, sort=False)
+            # df = f.concat_df([df, _df])
+            dfs.append(_df)
         else:
             data_dict["comm"] = str(p.comm)
             data_dict["taxon"] = p.taxon
             data_dict["frag_type"] = "modern"
             data_dict["seq_depth"] = p.fragments_modern["seq_depth"]
             _df = pd.DataFrame([data_dict], columns=data_dict.keys())
-            df = df.append(_df, ignore_index=True, sort=False)
+            # df = df.append(_df, ignore_index=True, sort=False)
+            # df = f.concat_df([df, _df])
+            dfs.append(_df)
+    df = f.concat_df(dfs)
     df["seq_depth_rounded"] = df.groupby("comm")["seq_depth"].transform(
         round_to_nreads, n_reads=n_reads
     )
@@ -704,7 +716,7 @@ def round_to_nreads(number_set, n_reads, digit_after_decimal=0):
     The down-side is that the results won't be accurate, but they are never accurate anyway:)
     """
     unround_numbers = [
-        x / float(sum(number_set)) * n_reads * 10 ** digit_after_decimal
+        x / float(sum(number_set)) * n_reads * 10**digit_after_decimal
         for x in number_set
     ]
     decimal_part_with_index = sorted(
@@ -712,7 +724,7 @@ def round_to_nreads(number_set, n_reads, digit_after_decimal=0):
         key=lambda y: y[1],
         reverse=True,
     )
-    remainder = n_reads * 10 ** digit_after_decimal - sum(
+    remainder = n_reads * 10**digit_after_decimal - sum(
         [int(x) for x in unround_numbers]
     )
     index = 0
@@ -720,16 +732,27 @@ def round_to_nreads(number_set, n_reads, digit_after_decimal=0):
         unround_numbers[decimal_part_with_index[index][0]] += 1
         remainder -= 1
         index = (index + 1) % len(number_set)
-    return [int(x) / float(10 ** digit_after_decimal) for x in unround_numbers]
+    return [int(x) / float(10**digit_after_decimal) for x in unround_numbers]
+
+
+log = logging.getLogger("my_logger")
 
 
 def main(args):
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+    )
     # simulating reads
     global debug
     if args["--debug"]:
         debug = True
     else:
-        debug = None
+        debug = False
+
+    log.setLevel(logging.DEBUG if debug else logging.INFO)
 
     sys.excepthook = exceptionHandler
 
@@ -767,7 +790,7 @@ def main(args):
 
     max_len = d.seqSys_props[seqSys][library]
 
-    # logging.info('Set maximum fragment length to {}nt based on the seqSys: {}...'.format(
+    # log.info('Set maximum fragment length to {}nt based on the seqSys: {}...'.format(
     #     max_len, seqSys))
 
     # Define different variables
@@ -781,24 +804,20 @@ def main(args):
     coverage = {"min": config["coverage"][0], "max": config["coverage"][1]}
 
     if read_len > max_len:
-        raise ValueError(
-            "Read length longer than the one allowed by {}...".format(seqSys)
-        )
+        raise ValueError(f"Read length longer than the one allowed by {seqSys}...")
 
     if read_len < min_len:
-        raise ValueError(
-            "Read length shorter than the minimum defined ({})...".format(min_len)
-        )
+        raise ValueError(f"Read length shorter than the minimum defined ({min_len})...")
 
     # load tables
-    logging.info("Loading abundace table...")
+    log.info("Loading abundace table...")
     abund_table = SimReads.load_abund_table(abund_table)
 
-    logging.info("Loading abundance genomes...")
+    log.info("Loading abundance genomes...")
     genome_table = f.load_genome_table(config["genome_table"])
 
     if genome_comp:
-        logging.info("Loading genome composition table...")
+        log.info("Loading genome composition table...")
         genome_comp = pd.read_csv(genome_comp, sep="\t")
         genome_comp = genome_comp.rename(columns={"Coverage": "coverage_ancient"})
     else:
@@ -806,9 +825,9 @@ def main(args):
 
     df = abund_table.merge(genome_table, on=["Taxon"])
 
-    if "TaxId" in df.columns:
+    if "Accession" in df.columns:
         genomes = df[
-            ["Community", "TaxId", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
+            ["Community", "Accession", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
         ].to_dict("records")
     else:
         genomes = df[
@@ -817,7 +836,7 @@ def main(args):
 
     # We need to add to the taxon the proportion of ancient
     # We need to take Community,
-    logging.info("Selecting random genomes...")
+    log.info("Selecting random genomes...")
     df_anc = df[["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]].copy()
     # df_anc['Perc_rel_abund'] = df_anc.groupby('Community')['Perc_rel_abund'].transform(round_to_100_percent)
     grouped = df_anc.groupby("Community")
@@ -845,10 +864,8 @@ def main(args):
             grouped, func=select_genomes, nproc=nproc, parms=parms
         )
 
-    logging.info(
-        "Generating random fragment lengths from {} distribution with modes {} and {}...".format(
-            dist, mode_len_ancient, mode_len_modern
-        )
+    log.info(
+        f"Generating random fragment lengths from {dist} distribution with modes [{mode_len_ancient}/{mode_len_modern}]"
     )
 
     func = partial(
@@ -885,7 +902,7 @@ def main(args):
     file_name = Path(filename.name).stem
     dir_name = Path(filename.name).parent
 
-    logging.info("Refinning read abundances...")
+    log.info("Refinning read abundances...")
     ancient_genomes = {}
     ancient_genomes["data"] = refine_abundances(ancient_genomes_data, n_reads=n_reads)
     # ancient_genomes["data"] = ancient_genomes_data
@@ -896,7 +913,6 @@ def main(args):
         "n_reads": n_reads,
         "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
-
     df_tsv = _get_read_abundances(ancient_genomes_data, n_reads=n_reads)
 
     suffix = ".json"
@@ -904,7 +920,7 @@ def main(args):
 
     #
     suffix_tsv = ".tsv"
-    out_file_tsv = Path(dir_name, "{}_read-abundances".format(file_name)).with_suffix(
+    out_file_tsv = Path(dir_name, f"{file_name}_read-abundances").with_suffix(
         suffix_tsv
     )
     df_tsv.to_csv(path_or_buf=out_file_tsv, sep="\t", header=True, index=False)
@@ -913,7 +929,7 @@ def main(args):
         ancient_genomes, default=obj_dict, ensure_ascii=False, indent=4
     )
     # ancient_genomes_json = jsonpickle.encode(ancient_genomes)
-    logging.info("Saving results to: {} & {}...".format(out_file, out_file_tsv))
+    log.info(f"Saving results to: {out_file} & {out_file_tsv}...")
 
     with open(out_file, "w", encoding="utf-8") as outfile:
         print(ancient_genomes_json, file=outfile)

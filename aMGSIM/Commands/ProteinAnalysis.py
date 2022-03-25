@@ -62,7 +62,7 @@ from aMGSIM import __version__
 # Codon functions
 
 
-debug = None
+debug = False
 
 
 # From
@@ -100,18 +100,19 @@ def exceptionHandler(
         debug_hook(exception_type, exception, traceback)
     else:
         print("{}: {}".format(exception_type.__name__, exception))
+        print("\n*** Error: Please use --debug to see full traceback.")
 
 
 logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    level=logging.DEBUG,
+    format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def combine_files(x, tmp_damage, out_dir):
     out_suffix = ".tsv.gz"
-    fname = "{}_aa-damage".format(x)
+    fname = f"{x}_aa-damage"
     outfile = Path(out_dir, fname).with_suffix(out_suffix)
     files = glob.glob(str(Path(tmp_damage, x + "*")))
     li = []
@@ -151,7 +152,7 @@ def main(args):
     if args["--debug"]:
         debug = True
     else:
-        debug = None
+        debug = False
 
     sys.excepthook = exceptionHandler
 

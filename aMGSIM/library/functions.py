@@ -12,6 +12,8 @@ from mimetypes import guess_type
 from Bio import SeqIO
 import pandas as pd
 from multiprocessing import Pool
+import gzip
+import shutil
 
 
 def str2dict(s):
@@ -418,3 +420,9 @@ def calc_chunksize(n_workers, len_iterable, factor=4):
     if extra:
         chunksize += 1
     return chunksize
+
+
+def unzip_files(infile, outfile):
+    with gzip.open(infile, "rb") as f_in:
+        with open(outfile, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)

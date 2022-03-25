@@ -24,7 +24,7 @@ def generate_random_sample_name():
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
 
 
-debug = None
+debug = False
 
 FWD_ADPT = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG"
 REV_ADPT = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT"
@@ -330,6 +330,9 @@ ar_schema_config = {
                 cpu_count() - 1
             ),
         ),
+        Optional("remove_adapters", default=True): And(
+            bool, error="The key dist should be True/False"
+        ),
     },
     And("fragSim"): {
         And("ancient_genomes"): And(
@@ -400,43 +403,43 @@ ar_schema_config = {
             error="Problem finding the second-read quality profile",
         ),
     },
-    And("AdapterRemoval"): {
-        Optional("--adapter1", default=FWD_ADPT): And(
-            And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
-            error="Forward adapter is not a valid sequence",
-        ),
-        Optional("--adapter2", default=REV_ADPT): And(
-            And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
-            error="Reverse adapter is not a valid sequence",
-        ),
-        Optional("--minlength", default=30): Or(
-            None,
-            And(Use(int), lambda n: 0 <= n),
-            error="Minimum read length should be larger than 0",
-        ),
-        Optional("--trimns", default=True): And(
-            bool, error="The key trimns should be True/False"
-        ),
-        Optional("--collapse", default=True): And(
-            bool, error="The key collapse should be True/False"
-        ),
-        Optional("--trimqualities", default=True): And(
-            bool, error="The key trimqualities should be True/False"
-        ),
-        Optional("--minquality", default=20): Or(
-            None,
-            And(Use(int), lambda n: 0 <= n),
-            error="Minimum read quality value should be larger than 0",
-        ),
-        Optional("--minadapteroverlap", default=30): Or(
-            None,
-            And(Use(int), lambda n: 0 < n),
-            error="Minimum overlap length should be larger or equal than 0",
-        ),
-        Optional("--preserve5p", default=True): And(
-            bool, error="The key preserve5p should be True/False"
-        ),
-    },
+    # And("AdapterRemoval"): {
+    #     Optional("--adapter1", default=FWD_ADPT): And(
+    #         And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
+    #         error="Forward adapter is not a valid sequence",
+    #     ),
+    #     Optional("--adapter2", default=REV_ADPT): And(
+    #         And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
+    #         error="Reverse adapter is not a valid sequence",
+    #     ),
+    #     Optional("--minlength", default=30): Or(
+    #         None,
+    #         And(Use(int), lambda n: 0 <= n),
+    #         error="Minimum read length should be larger than 0",
+    #     ),
+    #     Optional("--trimns", default=True): And(
+    #         bool, error="The key trimns should be True/False"
+    #     ),
+    #     Optional("--collapse", default=True): And(
+    #         bool, error="The key collapse should be True/False"
+    #     ),
+    #     Optional("--trimqualities", default=True): And(
+    #         bool, error="The key trimqualities should be True/False"
+    #     ),
+    #     Optional("--minquality", default=20): Or(
+    #         None,
+    #         And(Use(int), lambda n: 0 <= n),
+    #         error="Minimum read quality value should be larger than 0",
+    #     ),
+    #     Optional("--minadapteroverlap", default=30): Or(
+    #         None,
+    #         And(Use(int), lambda n: 0 < n),
+    #         error="Minimum overlap length should be larger or equal than 0",
+    #     ),
+    #     Optional("--preserve5p", default=True): And(
+    #         bool, error="The key preserve5p should be True/False"
+    #     ),
+    # },
 }
 
 seqSys_props = {

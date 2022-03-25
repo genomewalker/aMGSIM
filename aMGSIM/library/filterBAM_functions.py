@@ -288,23 +288,23 @@ def check_if_nrows_is_smaller_than_ntaxa(df, n_taxa):
 
 
 def get_missing_genomes(df, stats_df, n_taxa, n_taxa_first, tax_rank):
-    logging.info(
-        f"We tried to get {n_taxa:,} genomes at {tax_rank} level but only found {n_taxa_first:,}. Resampling the genome table."
+    log.info(
+        f"::: We tried to get {n_taxa:,} genomes at {tax_rank} level but only found {n_taxa_first:,}."
     )
+    log.info(f"::: Resampling the genome table.")
     # we will sample the table with genomes to get as closer as we can
     # while mainting a diverse set of genomes
     # get an initial set of genomes as big as we can
-    df1 = stats_df.groupby("taxrank").sample(n=1)
-    stats_df = stats_df.loc[~stats_df["reference"].isin(df1["reference"])]
+    stats_df = stats_df.loc[~stats_df["reference"].isin(df["reference"])]
     n_taxa_left = n_taxa - n_taxa_first
     if n_taxa_left <= stats_df.shape[0]:
         df2 = stats_df.sample(n=n_taxa_left)
     else:
-        logging.info(
-            f"Unfortunately there are not enough genomes, selecting {stats_df.shape[0]:,} genomes left."
+        log.info(
+            f"::: Unfortunately there are not enough genomes, selecting {stats_df.shape[0]:,} genomes left."
         )
         df2 = stats_df
-    df = f.concat_df([df1, df2])
+    df = f.concat_df([df, df2])
     return df
 
 
@@ -328,48 +328,82 @@ def select_taxa(
     """
     n_taxa_first = 0
     if mode == "most_abundant":
+        log.info(f"::: Selecting most abundant taxa")
         if is_damaged:
-            df = df[df["is_damaged"] == True].sort_values(by="rank", ascending=True)
+            df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
             stats_df = stats[stats["is_damaged"] == True]
         else:
-            df = df[df["is_damaged"] != True].sort_values(by="rank", ascending=True)
+            df = df[df["is_damaged"] != True]
             if df.shape[0] == 0:
                 return df
             stats_df = stats[stats["is_damaged"] != True]
         # select n rows from pandas DataFrame
-
         n_taxa_first = check_if_nrows_is_smaller_than_ntaxa(df, n_taxa)
-        # TODO: continue with subsampling if not enoug genomes
-        df = df.head(n_taxa)
-        # Filter the genoems in stats that are found in df
-        stats_df = stats_df.loc[stats_df["taxrank"].isin(df["taxrank"])]
-        df = (
-            stats_df.sort_values("tax_abund_read", ascending=False)
-            .groupby("taxrank")
-            .nth(0)
-        )
+        if n_taxa_first == n_taxa:
+            df = df.head(n_taxa)
+            # Filter the genoems in stats that are found in df
+            stats_df = stats_df.loc[stats_df["taxrank"].isin(df["taxrank"])]
+            df = (
+                stats_df.sort_values("tax_abund_read", ascending=False)
+                .groupby("taxrank")
+                .nth(0)
+                .sort_values("tax_abund_read", ascending=False)
+            )
+        else:
+            df1 = (
+                stats_df.sort_values("tax_abund_read", ascending=False)
+                .groupby("taxrank")
+                .nth(0)
+                .sort_values("tax_abund_read", ascending=False)
+            )
+            df = get_missing_genomes(
+                df=df1,
+                stats_df=stats_df,
+                n_taxa=n_taxa,
+                n_taxa_first=n_taxa_first,
+                tax_rank=tax_rank,
+            )
+
     elif mode == "least_abundant":
+        log.info(f"::: Selecting least abundant taxa")
         if is_damaged:
-            df = df[df["is_damaged"] == True].sort_values(by="rank", ascending=False)
+            df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
             stats_df = stats[stats["is_damaged"] == True]
         else:
-            df = df[df["is_damaged"] != True].sort_values(by="rank", ascending=False)
+            df = df[df["is_damaged"] != True]
             if df.shape[0] == 0:
                 return df
             stats_df = stats[stats["is_damaged"] != True]
-        n_taxa = check_if_nrows_is_smaller_than_ntaxa(df, n_taxa)
-
-        df = df.head(n_taxa)
-        # Filter the genoems in stats that are found in df
-        stats_df = stats_df.loc[stats_df["taxrank"].isin(df["taxrank"])]
-        df = (
-            stats_df.sort_values("tax_abund_read", ascending=True)
-            .groupby("taxrank")
-            .nth(0)
-        )
+        # select n rows from pandas DataFrame
+        n_taxa_first = check_if_nrows_is_smaller_than_ntaxa(df, n_taxa)
+        if n_taxa_first == n_taxa:
+            df = df.head(n_taxa)
+            # Filter the genoems in stats that are found in df
+            stats_df = stats_df.loc[stats_df["taxrank"].isin(df["taxrank"])]
+            df = (
+                stats_df.sort_values("tax_abund_read", ascending=True)
+                .groupby("taxrank")
+                .nth(0)
+                .sort_values("tax_abund_read", ascending=True)
+            )
+        else:
+            df1 = (
+                stats_df.sort_values("tax_abund_read", ascending=True)
+                .groupby("taxrank")
+                .nth(0)
+                .sort_values("tax_abund_read", ascending=True)
+            )
+            df = get_missing_genomes(
+                df=df1,
+                stats_df=stats_df,
+                n_taxa=n_taxa,
+                n_taxa_first=n_taxa_first,
+                tax_rank=tax_rank,
+            )
     elif mode == "random":
+        log.info("::: Selecting random taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
@@ -388,14 +422,18 @@ def select_taxa(
         if n_taxa_first == n_taxa:
             df = stats_df.groupby("taxrank").sample(n=1)
         else:
+            df1 = (
+                stats_df.groupby("taxrank")
+                .sample(n=1)
+                .sort_values("tax_abund_read", ascending=False)
+            )
             df = get_missing_genomes(
-                df=df,
+                df=df1,
                 stats_df=stats_df,
                 n_taxa=n_taxa,
                 n_taxa_first=n_taxa_first,
                 tax_rank=tax_rank,
             )
-            print(df)
     else:
         raise ValueError(
             'mode should be one of "most_abundant", "random", "least_abundant"'

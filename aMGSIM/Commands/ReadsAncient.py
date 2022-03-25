@@ -69,7 +69,7 @@ import gzip
 from mimetypes import guess_type
 from aMGSIM import __version__
 
-debug = None
+debug = False
 
 
 def exceptionHandler(
@@ -83,18 +83,11 @@ def exceptionHandler(
         # raise
         debug_hook(exception_type, exception, traceback)
     else:
-        print("{}: {}".format(exception_type.__name__, exception))
+        print(f"\n{exception_type.__name__}: {exception}")
+        log.error("Please use --debug to see full traceback.")
 
 
 log = logging.getLogger("my_logger")
-log.setLevel(logging.INFO)
-
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(levelname)s ::: %(asctime)s ::: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 
 
 def _rename_name(x, output_dir):
@@ -102,7 +95,7 @@ def _rename_name(x, output_dir):
     file = x[1]
 
     out_dir = os.path.join(output_dir, "genomes")
-    out_file = os.path.join(out_dir, "{}.fasta".format(taxon))
+    out_file = os.path.join(out_dir, f"{taxon}.fasta")
 
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir, exist_ok=True)
@@ -133,7 +126,7 @@ def _rename_name(x, output_dir):
                 name = re2.sub(r"\1", name)
                 name = re3.sub("", name)
                 name = re4.sub(r"\1", name)
-                name = "{}__seq-{}".format(taxon, i)
+                name = f"{taxon}__seq-{i}"
                 # name = name.lstrip('>') + '__seq{}'.format(i)
                 record.id = name
                 record.description = name
@@ -225,7 +218,7 @@ def process_params(params):
             else:
                 parms[k] = params[k]
 
-    parms = " ".join(["{} {}".format(k, v) for k, v in parms.items()])
+    parms = " ".join([f"{k} {v}" for k, v in parms.items()])
     return parms
 
 
@@ -240,7 +233,6 @@ def run_art(exe, params, seqSys, fasta, ofile, read_len, library, debug):
     elif library == "se":
         if params["--qprof1"] and params["--qprof2"]:
             cmd = "{exe} {params} -c 1 -l {read_len} -amp -na -o {ofile} -i {fasta}"
-
         else:
             cmd = "{exe} {params} -c 1 -ss {seqSys} -l {read_len} -amp -na -o {ofile} -i {fasta}"
 
@@ -291,19 +283,21 @@ def load_misincorporation_results(file_path):
     return misincorporation_comments, misincorporation_results
 
 
-def get_misincorporation_file(misincorporation_file, out_file, taxid):
-    """Function to get the misincorporation file for a given taxid
+def get_misincorporation_file(misincorporation_file, out_file, accession):
+    """Function to get the misincorporation file for a given accession
 
     Args:
         misincorporation_file (str): metaDMG misincorporation results file
         out_file (str): File to write the misincorporation file to.
-        taxid (str): Taxid to filter out
+        accession (str): accession to filter out
     """
     (
         misincorporation_comments,
         mdmg_misincorporation,
     ) = load_misincorporation_results(misincorporation_file)
-    mdmg_misincorporation = mdmg_misincorporation[mdmg_misincorporation["Chr"] == taxid]
+    mdmg_misincorporation = mdmg_misincorporation[
+        mdmg_misincorporation["Chr"] == accession
+    ]
     out = ""
     out += "".join(misincorporation_comments)
 
@@ -375,11 +369,14 @@ def prepare_data_fragments(
 
     fragSim_frag_suffix = ".tsv"
 
-    entry = "fragments_{}".format(frag_type)
+    entry = f"fragments_{frag_type}"
+
+    comm = x["comm"]
+    taxon = x["taxon"]
 
     fragment_data = {}
 
-    fragSim_fname = "{}---{}___fragSim-{}".format(x["comm"], x["taxon"], frag_type)
+    fragSim_fname = f"{comm}---{taxon}___fragSim-{frag_type}"
 
     fragments = pd.DataFrame(x[entry]["fragments"])
 
@@ -401,25 +398,23 @@ def prepare_data_fragments(
         fa_suffix_gz
     )
 
-    deamSim_mis_fname = "{}---{}___deamSim_misincorporation-{}".format(
-        x["comm"], x["taxon"], frag_type
-    )
+    deamSim_mis_fname = f"{comm}---{taxon}___deamSim_misincorporation-{frag_type}"
 
     fragment_data["deamSim_mis_ofile"] = Path(tmp_dir, deamSim_mis_fname).with_suffix(
         txt_suffix
     )
 
-    deamSim_fname = "{}---{}___deamSim-{}".format(x["comm"], x["taxon"], frag_type)
+    deamSim_fname = f"{comm}---{taxon}___deamSim-{frag_type}"
 
     fragment_data["deamSim_ofile"] = Path(tmp_dir, deamSim_fname).with_suffix(
         fa_suffix_gz
     )
 
-    adptSim_fname = "{}---{}___adptSim-{}".format(x["comm"], x["taxon"], frag_type)
+    adptSim_fname = f"{comm}---{taxon}___adptSim-{frag_type}"
 
     fragment_data["adptSim_ofile"] = Path(tmp_dir, adptSim_fname).with_suffix(fa_suffix)
 
-    art_fname = "{}---{}___art-{}.".format(x["comm"], x["taxon"], frag_type)
+    art_fname = f"{comm}---{taxon}___art-{frag_type}."
 
     fragment_data["art_ofile"] = Path(tmp_dir, art_fname)
 
@@ -436,13 +431,13 @@ def collect_file_names(
     x, art_ofile, fragSim_ofile, deamSim_ofile, adptSim_ofile, frag_type, library
 ):
     if library == "pe":
-        r1 = "{}1.fq".format(art_ofile)
-        r2 = "{}2.fq".format(art_ofile)
+        r1 = f"{art_ofile}1.fq"
+        r2 = f"{art_ofile}2.fq"
         sr = None
     else:
         r1 = None
         r2 = None
-        sr = "{}fq".format(art_ofile)
+        sr = "{art_ofile}fq"
 
         # Collect file names
     files = {
@@ -509,7 +504,7 @@ def generate_fragments(
             mis_file = get_misincorporation_file(
                 misincorporation_file=deamSim_params["-mapdamage"],
                 out_file=frag_data["deamSim_mis_ofile"],
-                taxid=x["taxId"],
+                accession=x["accession"],
             )
             run_deamSim(
                 exe=deamSim_exe,
@@ -529,9 +524,6 @@ def generate_fragments(
                 library=library,
                 debug=debug,
             )
-
-            # rename_sequences(fasta=frag_data["adptSim_ofile"])
-
             run_art(
                 exe=art_exe,
                 params=art_params,
@@ -542,7 +534,6 @@ def generate_fragments(
                 library=library,
                 debug=debug,
             )
-
             files_ancient = collect_file_names(
                 fragSim_ofile=frag_data["fragSim_ofile"],
                 deamSim_ofile=frag_data["deamSim_ofile"],
@@ -618,7 +609,7 @@ def generate_fragments(
             mis_file = get_misincorporation_file(
                 misincorporation_file=deamSim_params["-mapdamage"],
                 out_file=frag_data["deamSim_mis_ofile"],
-                taxid=x["taxId"],
+                accession=x["accession"],
             )
             parms = deamSim_params.copy()
             parms["-mapdamage"] = mis_file
@@ -729,7 +720,7 @@ def validations(self):
         pass
 
 
-def rename_reads(records, pattern, comm, taxon, frag_type, fastx):
+def rename_reads(records, pattern, comm, taxon, frag_type, fastx, remove_adapters):
     for i, record in records:
         # renaming fastq read
         m1 = re.match(pattern, record.id)
@@ -744,30 +735,11 @@ def rename_reads(records, pattern, comm, taxon, frag_type, fastx):
         # 8: length
         # 9: damage positions in read
         if fastx == "fastq":
-            name = "{}___{}---{}:{}:{}:{}:{}:{}:{}/{}".format(
-                comm,
-                m1.group(1),
-                i,
-                frag_type,
-                m1.group(2),
-                m1.group(3),
-                m1.group(4),
-                m1.group(5),
-                m1.group(6),
-                m1.group(7),
-            )
+            name = f"{comm}___{m1.group(1)}---{i}:{frag_type}:{m1.group(2)}:{m1.group(3)}:{m1.group(4)}:{m1.group(5)}:{m1.group(6)}/{m1.group(7)}"
+            if remove_adapters:
+                record = record[int(0) : int(m1.group(5))]
         elif fastx == "fasta":
-            name = "{}___{}---{}:{}:{}:{}:{}:{}:{}".format(
-                comm,
-                m1.group(1),
-                i,
-                frag_type,
-                m1.group(2),
-                m1.group(3),
-                m1.group(4),
-                m1.group(5),
-                m1.group(6),
-            )
+            name = f"{comm}___{m1.group(1)}---{i}:{frag_type}:{m1.group(2)}:{m1.group(3)}:{m1.group(4)}:{m1.group(5)}:{m1.group(6)}"
         record.id = name
         record.description = name
         # record.description = 'type:{} strand:{} start:{} stop:{} len:{} deam:{}'.format(
@@ -775,7 +747,7 @@ def rename_reads(records, pattern, comm, taxon, frag_type, fastx):
         yield record
 
 
-def _combine_reads(read_files, output_dir, output_file, fastx):
+def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
     """Combine fastq read files into 1 read file.
     Parameters
     ----------
@@ -792,9 +764,8 @@ def _combine_reads(read_files, output_dir, output_file, fastx):
         p0 = re.compile("(\S+)---(\S+)___art-(\S+).\d.fq")
         p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$")
     elif fastx == "fasta":
-        p0 = re.compile("(\S+)---(\S+)___\S+-(\S+).fasta.gz")
+        p0 = re.compile("(\S+)---(\S+)___\S+-(\S+).fasta\S+")
         p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
-
     with open(output_file, "w") as outFH:
         for in_file in read_files:
             m0 = re.match(p0, os.path.split(in_file)[1])
@@ -813,6 +784,7 @@ def _combine_reads(read_files, output_dir, output_file, fastx):
                         taxon=taxon,
                         frag_type=frag_type,
                         fastx=fastx,
+                        remove_adapters=remove_adapters,
                     ),
                     outFH,
                     fastx,
@@ -826,7 +798,7 @@ def _combine_reads(read_files, output_dir, output_file, fastx):
 
 
 def _combine_fastq_types(
-    file_type, data_modern, data_ancient, output_dir, comm, suffix
+    file_type, data_modern, data_ancient, output_dir, comm, suffix, remove_adapters
 ):
 
     output_dir = os.path.join(output_dir, str(comm))
@@ -844,8 +816,9 @@ def _combine_fastq_types(
         R1_files = _combine_reads(
             read_files=r1,
             output_dir=output_dir,
-            output_file="comm-{}_{}.1.fq".format(comm, suffix),
+            output_file=f"comm-{comm}_{suffix}.1.fq",
             fastx="fastq",
+            remove_adapters=remove_adapters,
         )
         files = {
             "comm": comm,
@@ -865,8 +838,9 @@ def _combine_fastq_types(
         R2_files = _combine_reads(
             read_files=r2,
             output_dir=output_dir,
-            output_file="comm-{}_{}.2.fq".format(comm, suffix),
+            output_file=f"comm-{comm}_{suffix}.2.fq",
             fastx="fastq",
+            remove_adapters=remove_adapters,
         )
         files = {
             "comm": comm,
@@ -910,14 +884,17 @@ def _combine_fasta_types(
     SR_files = _combine_reads(
         read_files=sr,
         output_dir=output_dir,
-        output_file="comm-{}_{}.fa".format(comm, suffix),
+        output_file=f"comm-{comm}_{suffix}.fa",
         fastx="fasta",
+        remove_adapters=False,
     )
     files = {"comm": comm, "file_type": file_type, "pair": "SR", "file": SR_files}
     return files
 
 
-def combine_fastx_files(x, output_dir, ancient_files, modern_files, exp_data):
+def combine_fastx_files(
+    x, output_dir, ancient_files, modern_files, exp_data, remove_adapters
+):
     comm = x[0]
     file_type = x[1]
     data_modern = list(filter(lambda d: d["comm"] == comm, modern_files))
@@ -936,6 +913,7 @@ def combine_fastx_files(x, output_dir, ancient_files, modern_files, exp_data):
             data_ancient=data_ancient,
             output_dir=output_dir,
             comm=comm,
+            remove_adapters=remove_adapters,
         )
     else:
         files = _combine_fasta_types(
@@ -950,14 +928,20 @@ def combine_fastx_files(x, output_dir, ancient_files, modern_files, exp_data):
 
 
 def main(args):
-
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+    )
     global debug
     if args["--debug"]:
         debug = True
     else:
-        debug = None
+        debug = False
+    log.setLevel(logging.DEBUG if debug else logging.INFO)
 
-    sys.excepthook = exceptionHandler
+    # sys.excepthook = exceptionHandler
 
     # simulating reads
     args = f.validate_schema(args, d.schema_init_ar, debug)
@@ -968,15 +952,16 @@ def main(args):
 
     # art_params = config_params['art_config']
     config_params = config["global"]
-
+    remove_adapters = config_params["remove_adapters"]
     val = validations(config)
 
     fragSim_params = config["fragSim"]
     deamSim_params = config["deamSim"]
 
     adptSim_params = config["adptSim"]
+
     art_params = config["art"]
-    adptRem_params = config["AdapterRemoval"]
+    # adptRem_params = config["AdapterRemoval"]
 
     libprep = config_params["libprep"]
 
@@ -985,7 +970,7 @@ def main(args):
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
     else:
-        logging.info("Folder {} already exists. Deleting...".format(tmp_dir))
+        log.info(f"Folder {tmp_dir} already exists. Deleting...")
         rmtree(tmp_dir)
         os.makedirs(tmp_dir, exist_ok=True)
 
@@ -993,20 +978,20 @@ def main(args):
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     else:
-        logging.info("Folder {} already exists. Deleting...".format(output_dir))
+        log.info(f"Folder {output_dir} already exists. Deleting...")
         rmtree(output_dir)
         os.makedirs(output_dir, exist_ok=True)
 
-    logging.info("Loading genomes...")
+    log.info("Loading genomes...")
     # load tables
     genome_table = f.load_genome_table(args["<genome_table>"])
 
-    logging.info("Normalizing genome names...")
+    log.info("Normalizing genome names...")
     genome_table = rename_genomes(
         genome_table=genome_table, output_dir=output_dir, cpus=config_params["cpus"]
     )
 
-    logging.info("Simulating reads by sample...")
+    log.info("Simulating reads by sample...")
     with open(fragSim_params["ancient_genomes"], "r") as json_file:
         filename = json_file
         ancient_genomes = json.load(json_file)
@@ -1059,12 +1044,13 @@ def main(args):
         ancient_files=ancient_files,
         modern_files=modern_files,
         exp_data=ancient_genomes_exp,
+        remove_adapters=remove_adapters,
     )
 
-    logging.info("Combining reads by sample...")
+    log.info("Combining reads by sample...")
 
     files = ["art_ofile_r1", "art_ofile_r2", "fragSim_ofile", "deamSim_ofile"]
-
+    debug = True
     comm_files = list(itertools.product(comms, files))
     if debug is True:
         files = list(map(func, comm_files))
@@ -1104,9 +1090,7 @@ def main(args):
     dir_name = Path(filename.name).parent
 
     suffix = ".json"
-    read_files_ofile = Path(dir_name, "{}_read-files".format(file_name)).with_suffix(
-        suffix
-    )
+    read_files_ofile = Path(dir_name, f"{file_name}_read-files").with_suffix(suffix)
 
     read_files_json = json.dumps(
         read_files, default=obj_dict, ensure_ascii=False, indent=4
@@ -1115,7 +1099,7 @@ def main(args):
     with open(read_files_ofile, "w", encoding="utf-8") as outfile:
         print(read_files_json, file=outfile)
 
-    logging.info("Ancient synthetic reads generated.")
+    log.info("Ancient synthetic reads generated.")
 
 
 def opt_parse(args=None):
