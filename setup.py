@@ -20,11 +20,11 @@ install_reqs = [
     "ray>=0.8.7",
     "MGSIM>=0.2.2",
     "pandarallel>=1.5.2",
-    "taxopy",
+    "taxopy>=0.9.2",
 ]
 
 ## install main application
-desc = "Anciengt metagenome simulation of multiple synthetic communities"
+desc = "Ancient metagenome simulation of multiple synthetic communities"
 setup(
     setup_requires=[
         # Setuptools 18.0 properly handles Cython extensions.

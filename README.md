@@ -42,7 +42,7 @@ pip install -e .
 
 aMGSIM incorporates three new subcommands to generate synthetic metagenomic reads:
 
-- **woltka2sim**: Estimate coverage, depth and other properties for each genome in sample processed with WOLTKA
+- **filterBAM2sim**: Estimate coverage, depth and other properties for each genome in sample processed with WOLTKA
 - **ancient-genomes**: Estimate coverage, depth and other properties for each genome in each synthetic community
 - **ancient-reads**: Simulate ancient reads for each taxon in each synthetic community
 - **protein-analysis**: Tracking damage to the codon positions of each simulated read. 
@@ -53,15 +53,15 @@ You can access the list of commands by:
 $ aMGSIM --list
 
 Available Commands:
-communities | woltka2sim | ancient-genomes | ancient-reads | protein-analysis
+communities | filterBAM2sim | ancient-genomes | ancient-reads | protein-analysis
 ```
 We have two different approaches to generate the synthetic communities:
 
-1. We can use empirical results from [WOLTKA](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) and [metaDMG](#) as shown [here](#) with the subcommand `woltka2sim`.
+1. We can use empirical results from [WOLTKA](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) and [metaDMG](#) as shown [here](#) with the subcommand `filterBAM2sim`.
 2. We can use the subcommand `communities` from [MGSIM](https://github.com/nick-youngblut/MGSIM/)
 
 
-> We recommend to use the woltka2sim subcommand
+> We recommend to use the filterBAM2sim subcommand
 
 
 To use the taxonomic profiling of WOLTKA and metaDMG, you will need the following files:
@@ -76,7 +76,7 @@ To use the taxonomic profiling of WOLTKA and metaDMG, you will need the followin
 Then you can use the command as follows:
 
 ```bash
-aMGSIM woltka2sim agw-config.yaml
+aMGSIM filterBAM2sim agw-config.yaml
 ```
 
 And example of the config file can be found here [**aw-config.yaml**](examples/conifg/aw-config.yaml) associated to the files described above are:
@@ -90,13 +90,13 @@ nodes_dmp: nodes-mdmg.dmp
 # Sample name
 sample_name: "0e59dd2155"
 # Statistics of the mapping results from the WOLTKA analysis
-woltka_stats: 0e59dd2155.woltka.dedup_stats-filtered.tsv.gz
+filterBAM_stats: 0e59dd2155.filterBAM.dedup_stats-filtered.tsv.gz
 # Filter options for the WOLTKA table
-woltka_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
+filterBAM_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
 # WOLTKA abundance table
-woltka_profiling_results: 0e59dd2155.woltka-none.tsv.gz
+filterBAM_profiling_results: 0e59dd2155.filterBAM-none.tsv.gz
 # Results of the metaDMG analysis
-mdmg_results: 0e59dd2155.woltka-mdmg.weight-0.csv.gz
+mdmg_results: 0e59dd2155.filterBAM-mdmg.weight-0.csv.gz
 # Filter conditions to identify damaged references
 mdmg_filter_conditions: { "d_max": 0.1, "phi": 500, "q": 0.25 }
 # Taxonomic scope of the metaDMG analysis

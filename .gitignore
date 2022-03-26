@@ -31,3 +31,4 @@ tmp/
 .pytest_*
 __pycache__
 **/.vscode/
+**/.history/

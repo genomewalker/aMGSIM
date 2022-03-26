@@ -24,7 +24,7 @@ def generate_random_sample_name():
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
 
 
-debug = None
+debug = False
 
 FWD_ADPT = "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGCCGTCTTCTGCTTG"
 REV_ADPT = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT"
@@ -47,9 +47,20 @@ IUPACAmbiguousDNA = {
     "N",
 }
 
-default_filter_values_mdmg = {"d_max": 0.1, "phi": 500, "q": 0.25}
-default_filter_values_woltka = {"breadth_exp_ratio": 0.5, "coverage_mean": 0.1}
-tax_ranks = ["superkingdom", "phylum", "class", "order", "family", "genus", "species"]
+default_filter_values_mdmg = {"D_max": 0.1, "phi": 500, "q": 0.25}
+default_filter_values_filterBAM = {"breadth_exp_ratio": 0.5, "coverage_mean": 0.1}
+tax_ranks = [
+    "superkingdom",
+    "lineage",
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species",
+    "subspecies",
+]
 genome_selection_options = ["random", "most_abundant", "least_abundant"]
 # schema_init_ag = {
 #     '<abund_table>': Use(open, error='<abund_table> should be readable'),
@@ -188,23 +199,19 @@ w_schema_config = {
         Use(lambda x: f.get_open_func(x)(x, "rt")),
         error="genome_paths should be readable",
     ),
-    "woltka_stats": And(
+    "filterBAM_stats": And(
         Use(lambda x: f.get_open_func(x)(x, "rt")),
         error="Problem finding the abundance table file",
-    ),
-    "woltka_profiling_results": And(
-        Use(lambda x: f.get_open_func(x)(x, "rt")),
-        error="Problem finding the custom genome composition table file",
     ),
     "mdmg_results": And(
         Use(lambda x: f.get_open_func(x)(x, "rt")),
         error="mdmg_results should be readable",
     ),
-    Optional("woltka_stats_filter", default=default_filter_values_woltka,): And(
+    Optional("filterBAM_stats_filter", default=default_filter_values_filterBAM,): And(
         Use(
             lambda x: f.check_filter_conditions(
                 x,
-                default_filter_values_woltka,
+                default_filter_values_filterBAM,
                 filters=["breadth_exp_ratio", "coverage_mean"],
             )
         ),
@@ -217,7 +224,16 @@ w_schema_config = {
     Optional("mdmg_filter_conditions", default=default_filter_values_mdmg,): And(
         Use(
             lambda x: f.check_filter_conditions(
-                x, default_filter_values_mdmg, filters=["d_max", "phi", "q"]
+                x,
+                default_filter_values_mdmg,
+                filters=[
+                    "D_max",
+                    "lambda_LR",
+                    "q",
+                    "phi",
+                    "Bayesian_D_max",
+                    "Bayesian_z",
+                ],
             )
         ),
         error="There's a problem with the filter. Please check the keys in the dict are valid and that all the values are >= 0",
@@ -314,6 +330,9 @@ ar_schema_config = {
                 cpu_count() - 1
             ),
         ),
+        Optional("remove_adapters", default=True): And(
+            bool, error="The key dist should be True/False"
+        ),
     },
     And("fragSim"): {
         And("ancient_genomes"): And(
@@ -384,43 +403,43 @@ ar_schema_config = {
             error="Problem finding the second-read quality profile",
         ),
     },
-    And("AdapterRemoval"): {
-        Optional("--adapter1", default=FWD_ADPT): And(
-            And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
-            error="Forward adapter is not a valid sequence",
-        ),
-        Optional("--adapter2", default=REV_ADPT): And(
-            And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
-            error="Reverse adapter is not a valid sequence",
-        ),
-        Optional("--minlength", default=30): Or(
-            None,
-            And(Use(int), lambda n: 0 <= n),
-            error="Minimum read length should be larger than 0",
-        ),
-        Optional("--trimns", default=True): And(
-            bool, error="The key trimns should be True/False"
-        ),
-        Optional("--collapse", default=True): And(
-            bool, error="The key collapse should be True/False"
-        ),
-        Optional("--trimqualities", default=True): And(
-            bool, error="The key trimqualities should be True/False"
-        ),
-        Optional("--minquality", default=20): Or(
-            None,
-            And(Use(int), lambda n: 0 <= n),
-            error="Minimum read quality value should be larger than 0",
-        ),
-        Optional("--minadapteroverlap", default=30): Or(
-            None,
-            And(Use(int), lambda n: 0 < n),
-            error="Minimum overlap length should be larger or equal than 0",
-        ),
-        Optional("--preserve5p", default=True): And(
-            bool, error="The key preserve5p should be True/False"
-        ),
-    },
+    # And("AdapterRemoval"): {
+    #     Optional("--adapter1", default=FWD_ADPT): And(
+    #         And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
+    #         error="Forward adapter is not a valid sequence",
+    #     ),
+    #     Optional("--adapter2", default=REV_ADPT): And(
+    #         And(Use(str), lambda x: IUPACAmbiguousDNA.issuperset(x)),
+    #         error="Reverse adapter is not a valid sequence",
+    #     ),
+    #     Optional("--minlength", default=30): Or(
+    #         None,
+    #         And(Use(int), lambda n: 0 <= n),
+    #         error="Minimum read length should be larger than 0",
+    #     ),
+    #     Optional("--trimns", default=True): And(
+    #         bool, error="The key trimns should be True/False"
+    #     ),
+    #     Optional("--collapse", default=True): And(
+    #         bool, error="The key collapse should be True/False"
+    #     ),
+    #     Optional("--trimqualities", default=True): And(
+    #         bool, error="The key trimqualities should be True/False"
+    #     ),
+    #     Optional("--minquality", default=20): Or(
+    #         None,
+    #         And(Use(int), lambda n: 0 <= n),
+    #         error="Minimum read quality value should be larger than 0",
+    #     ),
+    #     Optional("--minadapteroverlap", default=30): Or(
+    #         None,
+    #         And(Use(int), lambda n: 0 < n),
+    #         error="Minimum overlap length should be larger or equal than 0",
+    #     ),
+    #     Optional("--preserve5p", default=True): And(
+    #         bool, error="The key preserve5p should be True/False"
+    #     ),
+    # },
 }
 
 seqSys_props = {
