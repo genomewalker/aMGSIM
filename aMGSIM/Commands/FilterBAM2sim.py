@@ -77,10 +77,41 @@ def generate_genome_compositions(df, sample_name):
     Returns:
         pandas.DataFrame: A table with the genome information.
     """
-    df_selected = df[["Taxon", "coverage_mean", "is_damaged"]].copy()
+
+    df_selected = df[
+        [
+            "Taxon",
+            "coverage_mean",
+            "read_length_mode",
+            "read_length_std",
+            "read_length_min",
+            "read_length_max",
+            "is_damaged",
+        ]
+    ].copy()
     df_selected.loc[:, "Community"] = sample_name
-    df_selected = df_selected[["Taxon", "Community", "coverage_mean", "is_damaged"]]
-    df_selected.columns = ["Taxon", "Community", "Coverage", "onlyAncient"]
+    df_selected = df_selected[
+        [
+            "Taxon",
+            "Community",
+            "coverage_mean",
+            "read_length_mode",
+            "read_length_std",
+            "read_length_min",
+            "read_length_max",
+            "is_damaged",
+        ]
+    ]
+    df_selected.columns = [
+        "Taxon",
+        "Community",
+        "Coverage",
+        "Read_length",
+        "Read_length_std",
+        "Read_length_min",
+        "Read_length_max",
+        "onlyAncient",
+    ]
     # convert onlyAncient column to string
     df_selected.loc[:, "onlyAncient"] = df_selected["onlyAncient"].astype(str)
 
@@ -95,17 +126,77 @@ def generate_community_file(df, sample_name, use_restimated_proportions):
     """
     # create a new DataFrame with the selected taxa
     if use_restimated_proportions:
-        df_selected = df[["reference", "Taxon", "proportion_new"]].copy()
+        df_selected = df[
+            [
+                "reference",
+                "Taxon",
+                "proportion_new",
+                "read_length_mode",
+                "read_length_min",
+                "read_length_max",
+                "read_length_std",
+            ]
+        ].copy()
         df_selected.loc[:, "Community"] = sample_name
         df_selected["Rank"] = np.arange(len(df_selected)) + 1
-        df_selected = df_selected[["Community", "Taxon", "Rank", "proportion_new"]]
-        df_selected.columns = ["Community", "Taxon", "Rank", "Perc_rel_abund"]
+        df_selected = df_selected[
+            [
+                "Community",
+                "Taxon",
+                "Rank",
+                "read_length_mode",
+                "read_length_std",
+                "read_length_min",
+                "read_length_max",
+                "proportion_new",
+            ]
+        ]
+        df_selected.columns = [
+            "Community",
+            "Taxon",
+            "Rank",
+            "Read_length",
+            "Read_length_std",
+            "Read_length_min",
+            "Read_length_max",
+            "Perc_rel_abund",
+        ]
     else:
-        df_selected = df[["reference", "Taxon", "proportion"]].copy()
+        df_selected = df[
+            [
+                "reference",
+                "Taxon",
+                "proportion",
+                "read_length_mode",
+                "read_length_std",
+                "read_length_min",
+                "read_length_max",
+            ]
+        ].copy()
         df_selected.loc[:, "Community"] = sample_name
         df_selected["Rank"] = np.arange(len(df_selected)) + 1
-        df_selected = df_selected[["Community", "Taxon", "Rank", "proportion"]]
-        df_selected.columns = ["Community", "Taxon", "Rank", "Perc_rel_abund"]
+        df_selected = df_selected[
+            [
+                "Community",
+                "Taxon",
+                "Rank",
+                "read_length_mode",
+                "read_length_std",
+                "read_length_min",
+                "read_length_max",
+                "proportion",
+            ]
+        ]
+        df_selected.columns = [
+            "Community",
+            "Taxon",
+            "Rank",
+            "Read_length",
+            "Read_length_std",
+            "Read_length_min",
+            "Read_length_max",
+            "Perc_rel_abund",
+        ]
 
     return df_selected
 
@@ -165,18 +256,18 @@ def main(args):
     config = f.get_config(
         config=args["<config>"], schema=d.w_schema_config, debug=debug
     )
-    taxonomic_rank = config["taxonomic_rank"]
+    taxonomic_rank = config["taxonomic-rank"]
     # load tables
     log.info("Loading genome paths file...")
-    genome_paths = w.load_genome_paths(config["genome_paths"])
+    genome_paths = w.load_genome_paths(config["genome-paths"])
 
     log.info("Loading filterBAM stats file...")
-    filterBAM_stats = w.load_filterBAM_stats_table(config["filterBAM_stats"])
+    filterBAM_stats = w.load_filterBAM_stats_table(config["filterBAM-stats"])
     filterBAM_stats_n = filterBAM_stats.shape[0]
 
     log.info("Generating taxonomic information...")
     taxdb = txp.TaxDb(
-        nodes_dmp=config["nodes_dmp"], names_dmp=config["names_dmp"], keep_files=True
+        nodes_dmp=config["nodes-dmp"], names_dmp=config["names-dmp"], keep_files=True
     )
 
     taxonomy_info, tax_ranks = w.get_taxonomy_info(
@@ -192,17 +283,17 @@ def main(args):
 
     filterBAM_stats = w.filter_filterBAM_taxa(
         df=filterBAM_stats,
-        filter_conditions=config["filterBAM_filter_conditions"],
+        filter_conditions=config["filterBAM-filter-conditions"],
     )
     log.info(f"Kept {filterBAM_stats.shape[0]} taxa from {filterBAM_stats_n}")
 
     log.info("Loading metaDMG results...")
-    mdmg_results = w.load_mdmg_results(config["mdmg_results"])
+    mdmg_results = w.load_mdmg_results(config["mdmg-results"])
     # find which taxon are damaged
 
     damaged_taxa = w.filter_damaged_taxa(
         df=mdmg_results,
-        filter_conditions=config["mdmg_filter_conditions"],
+        filter_conditions=config["mdmg-filter-conditions"],
         taxonomic_rank=taxonomic_rank,
     )
 
@@ -236,8 +327,8 @@ def main(args):
     non_damaged_genomes = w.select_taxa(
         rank_abundance,
         is_damaged=False,
-        mode=config["max_genomes_nondamaged_selection"],
-        n_taxa=config["max_genomes_nondamaged"],
+        mode=config["max-genomes-nondamaged-selection"],
+        n_taxa=config["max-genomes-nondamaged"],
         tax_rank=taxonomic_rank,
         stats=filterBAM_stats,
     )
@@ -245,8 +336,8 @@ def main(args):
     damaged_genomes = w.select_taxa(
         rank_abundance,
         is_damaged=True,
-        mode=config["max_genomes_damaged_selection"],
-        n_taxa=config["max_genomes_damaged"],
+        mode=config["max-genomes-damaged-selection"],
+        n_taxa=config["max-genomes-damaged"],
         tax_rank=taxonomic_rank,
         stats=filterBAM_stats,
     )
@@ -272,13 +363,16 @@ def main(args):
     # community file
     community_file = generate_community_file(
         genomes,
-        sample_name=config["sample_name"],
-        use_restimated_proportions=config["use_restimated_proportions"],
+        sample_name=config["sample-name"],
+        use_restimated_proportions=config["use-restimated-proportions"],
     )
 
     genome_compositions = generate_genome_compositions(
         df=genomes,
-        sample_name=config["sample_name"],
+        sample_name=config["sample-name"],
+    )
+    genome_compositions.Read_length = genome_compositions.Read_length.round(0).astype(
+        int
     )
     genome_paths_file = generate_genome_paths(
         df=genomes,
@@ -286,7 +380,7 @@ def main(args):
     )
 
     log.info(f"Writing results")
-    out_files = create_output_files(prefix=config["sample_name"])
+    out_files = create_output_files(prefix=config["sample-name"])
     community_file.to_csv(out_files["communities"], sep="\t", index=False)
     genome_paths_file.to_csv(out_files["paths"], sep="\t", index=False)
     genome_compositions.to_csv(out_files["compositions"], sep="\t", index=False)

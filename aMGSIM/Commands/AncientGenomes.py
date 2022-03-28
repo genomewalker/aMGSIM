@@ -35,6 +35,8 @@ Description:
 
 # import
 # batteries
+from distutils.log import info
+from statistics import mode
 from docopt import docopt
 import logging
 import pandas as pd
@@ -44,6 +46,8 @@ import numpy as np
 import json
 from pathlib import Path
 import sys
+import math
+from scipy.stats import lognorm
 
 # application
 from MGSIM import SimReads
@@ -72,7 +76,6 @@ def exceptionHandler(
         print("\n*** Error: Please use --debug to see full traceback.")
 
 
-
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(levelname)s ::: %(asctime)s ::: %(message)s",
@@ -93,6 +96,7 @@ def process_genome(
     max_len,
     coverage,
     library,
+    read_length_freqs,
     selected_genomes,
     genome_comp,
     n_reads,
@@ -106,6 +110,7 @@ def process_genome(
         max_len=max_len,
         coverage=coverage,
         library=library,
+        read_length_freqs=read_length_freqs,
         # seqSys=seqSys,
         selected_genomes=selected_genomes,
         genome_comp=genome_comp,
@@ -127,6 +132,7 @@ class Genome:
         max_len,
         coverage,
         library,
+        read_length_freqs,
         n_reads,
         *args,
         **kwargs,
@@ -145,6 +151,30 @@ class Genome:
             self.accession = genome["Accession"]
         else:
             self.accession = None
+
+        # if "Read_length" in genome_comp.keys():
+        #     rl = genome_comp[genome_comp["Taxon"] == self.taxon].iloc[0]["Read_length"]
+        #     mode_len_ancient = rl
+        #     mode_len_modern = rl
+
+        # if "Read_length_std" in genome_comp.keys():
+        #     stddev = genome_comp[genome_comp["Taxon"] == self.taxon].iloc[0][
+        #         "Read_length_std"
+        #     ]
+        #     stddev_len_ancient = stddev
+        #     stddev_len_modern = stddev
+        # else:
+        #     stddev_len_ancient = mode_len_ancient - min_len
+        #     stddev_len_modern = mode_len_modern - min_len
+
+        if "Read_length_min" in genome_comp.keys():
+            min_len = genome_comp[genome_comp["Taxon"] == self.taxon].iloc[0][
+                "Read_length_min"
+            ]
+        if "Read_length_max" in genome_comp.keys():
+            max_len = genome_comp[genome_comp["Taxon"] == self.taxon].iloc[0][
+                "Read_length_max"
+            ]
         # self.library = library
         # self.read_length = max_len
         # self.seqSys = seqSys
@@ -192,6 +222,7 @@ class Genome:
                 min_len=min_len,
                 max_len=max_len,
                 dist=dist,
+                read_length_freqs=read_length_freqs,
                 mode_len=mode_len_ancient,
                 rnd_seed=rnd_seed,
             )
@@ -248,6 +279,7 @@ class Genome:
                 max_len=max_len,
                 dist=dist,
                 mode_len=mode_len_modern,
+                read_length_freqs=read_length_freqs,
                 rnd_seed=rnd_seed,
             )
             if library == "se":
@@ -301,6 +333,7 @@ class Genome:
                 min_len=min_len,
                 max_len=max_len,
                 dist=dist,
+                read_length_freqs=read_length_freqs,
                 mode_len=mode_len_ancient,
                 rnd_seed=rnd_seed,
             )
@@ -308,6 +341,7 @@ class Genome:
                 min_len=min_len,
                 max_len=max_len,
                 dist=dist,
+                read_length_freqs=read_length_freqs,
                 mode_len=mode_len_modern,
                 rnd_seed=rnd_seed,
             )
@@ -351,39 +385,58 @@ class Genome:
                 self.coverage_enforced = True
             self.seq_depth = seq_depth
 
-    def random_fragments(self, min_len, max_len, dist, mode_len, rnd_seed):
-        n_frags = int(1e6)
-        # n_frags = max_len - min_len + 1
-        stddev = mode_len - min_len
-        sigma, scale = f.lognorm_params(mode=mode_len, stddev=stddev)
-        mu = np.log(scale)
-        dist_params = {"mean": mu, "sigma": sigma}
-        # drawing relative abundances from the user-defined distribution
-        freq_dist = f.get_freq_dist(dist, dist_params)
-        dist_freqs = freq_dist(size=n_frags)
-        dist_freqs = [int(x) for x in dist_freqs]
-        # freqs = np.sort(dist_freqs / sum(dist_freqs) * 100)[::-1]
-        # making a series for the taxa
-        lengths = pd.Series(dist_freqs)
-        lengths = lengths[(lengths >= min_len) & (lengths <= max_len)]
-        lengths = lengths.value_counts().sort_index()
-        freqs = list(lengths / sum(lengths))
-        lens = np.multiply(list(lengths.index), freqs).sum()
-        avg_len = float(lens / sum(freqs))
-        # print("Lengths: {}", list(lengths.index))
-        # print("Freqs: {}", list(lengths/sum(lengths)))
-        # print("Sizes: {}".format(sizes))
-        # print("Avg size: {}".format(avg_size))
-        # exit()
-        frags = {
-            "fragments": {"length": list(lengths.index), "freq": freqs},
-            "dist_params": {
-                "mu": float(mu),
-                "sigma": float(sigma),
-                "rnd_seed": rnd_seed,
-            },
-            "avg_len": avg_len,
-        }
+    def random_fragments(
+        self, min_len, max_len, dist, read_length_freqs, mode_len, rnd_seed
+    ):
+        if read_length_freqs:
+            lengths = read_length_freqs[self.accession]["length"]
+            freqs = read_length_freqs[self.accession]["freq"]
+            lens = np.multiply(lengths, freqs).sum()
+            avg_len = float(lens / sum(freqs))
+            frags = {
+                "fragments": {
+                    "length": lengths,
+                    "freq": freqs,
+                },
+                "dist_params": {
+                    "scale": None,
+                    "sigma": None,
+                    "rnd_seed": None,
+                },
+                "avg_len": avg_len,
+            }
+        else:
+            n_frags = int(1e6)
+            stddev = mode_len - min_len
+            sigma, scale = f.lognorm_params(mode=mode_len, stddev=stddev)
+            mu = np.log(scale)
+            dist_params = {"mean": mu, "sigma": sigma}
+            # drawing relative abundances from the user-defined distribution
+            freq_dist = f.get_freq_dist(dist, dist_params)
+            dist_freqs = freq_dist(size=n_frags)
+            dist_freqs = [int(x) for x in dist_freqs]
+            # freqs = np.sort(dist_freqs / sum(dist_freqs) * 100)[::-1]
+            # making a series for the taxa
+            lengths = pd.Series(dist_freqs)
+            lengths = lengths[(lengths >= min_len) & (lengths <= max_len)]
+            lengths = lengths.value_counts().sort_index()
+            freqs = list(lengths / sum(lengths))
+            lens = np.multiply(list(lengths.index), freqs).sum()
+            avg_len = float(lens / sum(freqs))
+            # print("Lengths: {}", list(lengths.index))
+            # print("Freqs: {}", list(lengths/sum(lengths)))
+            # print("Sizes: {}".format(sizes))
+            # print("Avg size: {}".format(avg_size))
+            # exit()
+            frags = {
+                "fragments": {"length": list(lengths.index), "freq": freqs},
+                "dist_params": {
+                    "scale": float(scale),
+                    "sigma": float(sigma),
+                    "rnd_seed": rnd_seed,
+                },
+                "avg_len": avg_len,
+            }
         return frags
 
     def __str__(self):
@@ -754,7 +807,7 @@ def main(args):
 
     log.setLevel(logging.DEBUG if debug else logging.INFO)
 
-    sys.excepthook = exceptionHandler
+    # sys.excepthook = exceptionHandler
 
     # simulating reads
     args = f.validate_schema(args, d.schema_init_ag, debug)
@@ -763,21 +816,21 @@ def main(args):
     )
 
     # Test that both genome composition of abundance table are given
-    if not config["abund_table"] and not config["genome_comp"]:
+    if not config["abund-table"] and not config["genome-comp"]:
         raise IOError(
             "You need to provide an abundance table and/or genome composition table"
         )
 
-    if config["abund_table"] and not config["genome_comp"]:
-        abund_table = config["abund_table"]
+    if config["abund-table"] and not config["genome-comp"]:
+        abund_table = config["abund-table"]
         genome_comp = False
         filename = abund_table
-    elif config["genome_comp"] and not config["abund_table"]:
-        genome_comp = config["genome_comp"]
+    elif config["genome-comp"] and not config["abund-table"]:
+        genome_comp = config["genome-comp"]
         filename = genome_comp
     else:
-        genome_comp = config["genome_comp"]
-        abund_table = config["abund_table"]
+        genome_comp = config["genome-comp"]
+        abund_table = config["abund-table"]
         filename = abund_table
 
     if config["library"] == "single":
@@ -802,6 +855,7 @@ def main(args):
     mode_len_modern = config["mode-len-modern"]
     n_reads = config["num-reads"]
     coverage = {"min": config["coverage"][0], "max": config["coverage"][1]}
+    read_length_freqs = config["read-length-freqs"]
 
     if read_len > max_len:
         raise ValueError(f"Read length longer than the one allowed by {seqSys}...")
@@ -814,7 +868,7 @@ def main(args):
     abund_table = SimReads.load_abund_table(abund_table)
 
     log.info("Loading abundance genomes...")
-    genome_table = f.load_genome_table(config["genome_table"])
+    genome_table = f.load_genome_table(config["genome-table"], nproc)
 
     if genome_comp:
         log.info("Loading genome composition table...")
@@ -824,6 +878,10 @@ def main(args):
         genome_comp = pd.DataFrame(columns=["Taxon", "coverage_ancient", "onlyAncient"])
 
     df = abund_table.merge(genome_table, on=["Taxon"])
+
+    if read_length_freqs:
+        log.info("Loading read length frequencies from JSON...")
+        read_length_freqs = f.load_read_length_freqs(read_length_freqs)
 
     if "Accession" in df.columns:
         genomes = df[
@@ -864,9 +922,14 @@ def main(args):
             grouped, func=select_genomes, nproc=nproc, parms=parms
         )
 
-    log.info(
-        f"Generating random fragment lengths from {dist} distribution with modes [{mode_len_ancient}/{mode_len_modern}]"
-    )
+    if read_length_freqs:
+        log.info(f"Generating random fragment lengths from JSON file")
+        log.info(f"::: Using empirical read lengths")
+    else:
+        log.info(f"Generating random fragment lengths from {dist} distribution")
+        log.info(
+            f"::: Using read lengths with modes [{mode_len_ancient}/{mode_len_modern}]"
+        )
 
     func = partial(
         process_genome,
@@ -877,6 +940,7 @@ def main(args):
         max_len=read_len,
         coverage=coverage,
         library=library,
+        read_length_freqs=read_length_freqs,
         # seqSys=seqSys,
         selected_genomes=selected_genomes,
         n_reads=n_reads,

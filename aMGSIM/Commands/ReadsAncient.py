@@ -952,7 +952,7 @@ def main(args):
 
     # art_params = config_params['art_config']
     config_params = config["global"]
-    remove_adapters = config_params["remove_adapters"]
+    remove_adapters = config_params["remove-adapters"]
     val = validations(config)
 
     fragSim_params = config["fragSim"]
@@ -966,7 +966,7 @@ def main(args):
     libprep = config_params["libprep"]
 
     # Create folders
-    tmp_dir = config_params["tmp_dir"]
+    tmp_dir = config_params["tmp-dir"]
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
     else:
@@ -974,7 +974,7 @@ def main(args):
         rmtree(tmp_dir)
         os.makedirs(tmp_dir, exist_ok=True)
 
-    output_dir = config_params["output_dir"]
+    output_dir = config_params["output-dir"]
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     else:
@@ -992,7 +992,7 @@ def main(args):
     )
 
     log.info("Simulating reads by sample...")
-    with open(fragSim_params["ancient_genomes"], "r") as json_file:
+    with open(fragSim_params["ancient-genomes"], "r") as json_file:
         filename = json_file
         ancient_genomes = json.load(json_file)
     ancient_genomes_data = ancient_genomes["data"]
@@ -1050,7 +1050,6 @@ def main(args):
     log.info("Combining reads by sample...")
 
     files = ["art_ofile_r1", "art_ofile_r2", "fragSim_ofile", "deamSim_ofile"]
-    debug = True
     comm_files = list(itertools.product(comms, files))
     if debug is True:
         files = list(map(func, comm_files))

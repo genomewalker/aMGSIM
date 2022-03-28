@@ -1,8 +1,8 @@
 import numpy as np
 import ruamel.yaml
-from collections import OrderedDict
+from collections import OrderedDict, ChainMap
 from distutils.spawn import find_executable
-from functools import partial
+from functools import partial, reduce
 from itertools import chain
 import sys
 import re
@@ -14,6 +14,8 @@ import pandas as pd
 from multiprocessing import Pool
 import gzip
 import shutil
+import json
+import ujson
 
 
 def str2dict(s):
@@ -335,6 +337,11 @@ def _genome_size(x):
         for i, record in enumerate(SeqIO.parse(f, "fasta")):
             bp += len(record.seq)
     return bp
+
+
+def load_read_length_freqs(file):
+    file = ujson.load(file)
+    return reduce(lambda d, src: d.update(src) or d, file, {})
 
 
 def get_compression_type(filename):
