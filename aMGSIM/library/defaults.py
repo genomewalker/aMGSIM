@@ -117,14 +117,19 @@ schema_art_config = {"art_config": Use(open, error="art_config should be readabl
 
 
 ag_schema_config = {
-    "genome_table": And(Use(open, error="genome_table should be readable")),
-    Optional("abund_table", default=False): Or(
+    "genome-table": And(Use(open, error="genome-table should be readable")),
+    Optional("abund-table", default=False): Or(
         bool, And(Use(open)), error="Problem finding the abundance table file"
     ),
-    Optional("genome_comp", default=False): Or(
+    Optional("genome-comp", default=False): Or(
         bool,
         And(Use(open)),
         error="Problem finding the custom genome composition table file",
+    ),
+    Optional("read-length-freqs", default=False): Or(
+        bool,
+        And(Use(open)),
+        error="Problem finding the read length frequencies JSON file",
     ),
     Optional("cpus", default=1): Or(
         None,
@@ -195,19 +200,19 @@ ag_schema_config = {
 }
 
 w_schema_config = {
-    "genome_paths": And(
+    "genome-paths": And(
         Use(lambda x: f.get_open_func(x)(x, "rt")),
         error="genome_paths should be readable",
     ),
-    "filterBAM_stats": And(
+    "filterBAM-stats": And(
         Use(lambda x: f.get_open_func(x)(x, "rt")),
         error="Problem finding the abundance table file",
     ),
-    "mdmg_results": And(
+    "mdmg-results": And(
         Use(lambda x: f.get_open_func(x)(x, "rt")),
         error="mdmg_results should be readable",
     ),
-    Optional("filterBAM_stats_filter", default=default_filter_values_filterBAM,): And(
+    Optional("filterBAM-stats-filter", default=default_filter_values_filterBAM,): And(
         Use(
             lambda x: f.check_filter_conditions(
                 x,
@@ -221,7 +226,7 @@ w_schema_config = {
     #     Use(lambda x: f.get_open_func(x)(x, "rt")),
     #     error="mdmg_misincorporation should be readable",
     # ),
-    Optional("mdmg_filter_conditions", default=default_filter_values_mdmg,): And(
+    Optional("mdmg-filter-conditions", default=default_filter_values_mdmg,): And(
         Use(
             lambda x: f.check_filter_conditions(
                 x,
@@ -238,22 +243,22 @@ w_schema_config = {
         ),
         error="There's a problem with the filter. Please check the keys in the dict are valid and that all the values are >= 0",
     ),
-    Optional("taxonomic_rank", default="genus"): And(
+    Optional("taxonomic-rank", default="genus"): And(
         str,
         lambda x: x in tax_ranks,
         error=f"Invalid taxonomic ranks. Pick one valid from {', '.join(str(x) for x in tax_ranks)}",
     ),
-    Optional("max_genomes_nondamaged", default=10): Or(
+    Optional("max-genomes-nondamaged", default=10): Or(
         None,
         And(Use(int), lambda max_genomes_nondamaged: max_genomes_nondamaged > 0),
         error="The number of non-damaged genomes selected should be greater than 0",
     ),
-    Optional("max_genomes_damaged", default=10): Or(
+    Optional("max-genomes-damaged", default=10): Or(
         None,
         And(Use(int), lambda max_genomes_damaged: max_genomes_damaged > 0),
         error="The number of damaged genomes selected should be greater than 0",
     ),
-    Optional("max_genomes_nondamaged_selection", default="most_abundant"): And(
+    Optional("max-genomes-nondamaged-selection", default="most_abundant"): And(
         str,
         lambda x: x in genome_selection_options,
         error=f"Invalid option. Pick one valid from {', '.join(str(x) for x in tax_ranks)}",
@@ -265,7 +270,7 @@ w_schema_config = {
             cpu_count() - 1
         ),
     ),
-    Optional("sample_name", default=generate_random_sample_name()): Or(
+    Optional("sample-name", default=generate_random_sample_name()): Or(
         None,
         And(
             Use(str),
@@ -312,13 +317,13 @@ ar_schema_config = {
         # Optional('seq_depth', default=1e-5): Or(None, And(Use(float), lambda x: x > 0),
         #                                         error='Sequencing depth has to be larger than 0'),
         Optional(
-            "tmp_dir",
+            "tmp-dir",
             default=os.path.join(
                 os.getcwd(), datetime.datetime.now().strftime(".tmp-%Y%m%d%H%M%S")
             ),
         ): And(Use(str)),
         Optional(
-            "output_dir",
+            "output-dir",
             default=os.path.join(
                 os.getcwd(), datetime.datetime.now().strftime("sim_reads-%Y%m%d%H%M%S")
             ),
@@ -330,12 +335,12 @@ ar_schema_config = {
                 cpu_count() - 1
             ),
         ),
-        Optional("remove_adapters", default=True): And(
+        Optional("remove-adapters", default=True): And(
             bool, error="The key dist should be True/False"
         ),
     },
     And("fragSim"): {
-        And("ancient_genomes"): And(
+        And("ancient-genomes"): And(
             str,
             lambda x: os.path.exists(x),
             error="Cannot open the file with the ancient genomes information.",

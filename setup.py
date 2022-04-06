@@ -21,6 +21,7 @@ install_reqs = [
     "MGSIM>=0.2.2",
     "pandarallel>=1.5.2",
     "taxopy>=0.9.2",
+    "ujson>=5.1.0",
 ]
 
 ## install main application

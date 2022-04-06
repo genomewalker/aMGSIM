@@ -1,15 +1,15 @@
-# TSV file with the name of the genome and the fasta location of the references used in WOLTKA, the file has no header and has the following format: name\tfasta_location
+# TSV file with the name of the genome and the fasta location of the references used in filetrBAM, the file has no header and has the following format: name\tfasta_location
 genome_paths: genome-paths-list.tsv
-# Nodes and names dumps used for the WOLTKA analysis
+# Nodes and names dumps used for the filterBAM analysis
 names_dmp: names-mdmg.dmp
 nodes_dmp: nodes-mdmg.dmp
 # Sample name
 sample_name: "0e59dd2155"
-# Statistics of the mapping results from the WOLTKA analysis
+# Statistics of the mapping results from the filterBAM analysis
 filterBAM_stats: 0e59dd2155.filterBAM.dedup_stats-filtered.tsv.gz
-# Filter options for the WOLTKA table
+# Filter options for the filterBAM table
 filterBAM_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
-# WOLTKA abundance table
+# filterBAM abundance table
 filterBAM_profiling_results: 0e59dd2155.filterBAM-none.tsv.gz
 # Results of the metaDMG analysis
 mdmg_results: 0e59dd2155.filterBAM-mdmg.weight-0.csv.gz
