@@ -42,7 +42,7 @@ pip install -e .
 
 aMGSIM incorporates three new subcommands to generate synthetic metagenomic reads:
 
-- **filterBAM2sim**: Estimate coverage, depth and other properties for each genome in sample processed with WOLTKA
+- **filterBAM2sim**: Estimate coverage, depth and other properties for each genome in sample processed with filterBAM
 - **ancient-genomes**: Estimate coverage, depth and other properties for each genome in each synthetic community
 - **ancient-reads**: Simulate ancient reads for each taxon in each synthetic community
 - **protein-analysis**: Tracking damage to the codon positions of each simulated read. 
@@ -57,20 +57,19 @@ communities | filterBAM2sim | ancient-genomes | ancient-reads | protein-analysis
 ```
 We have two different approaches to generate the synthetic communities:
 
-1. We can use empirical results from [WOLTKA](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) and [metaDMG](#) as shown [here](#) with the subcommand `filterBAM2sim`.
+1. We can use empirical results from [filterBAM]() and [metaDMG](#) as shown [here](#) with the subcommand `filterBAM2sim`.
 2. We can use the subcommand `communities` from [MGSIM](https://github.com/nick-youngblut/MGSIM/)
 
 
 > We recommend to use the filterBAM2sim subcommand
 
 
-To use the taxonomic profiling of WOLTKA and metaDMG, you will need the following files:
+To use the empirical data from filterBAM and metaDMG, you will need the following files:
 
 - A file containing the paths to the genomes used for mapping the reads. A TSV file with the `name` and `location of the genomes` fasta files like the file [genome-paths-list.tsv](examples/data/genome-paths-list.tsv) 
-- A file containing the mapping stats after filtering the BAM files with [bam-filter](https://github.com/genomewalker/bam-filter) before inferring the OGUs with WOLTKA
-- The WOLTKA abundances file containing the abundances of each OGU/genus/phylum.
+- A file containing the mapping stats after filtering the BAM files with [bam-filter](https://github.com/genomewalker/bam-filter).
 - The metaDMG CSV ouput for the sample and the misincorporation file.
-- The taxonomy dump files (names and nodes) used for WOLTKA and metaDMG.
+- The taxonomy dump files (names and nodes) used for filterBAM and metaDMG.
 
 
 Then you can use the command as follows:
@@ -82,18 +81,18 @@ aMGSIM filterBAM2sim agw-config.yaml
 And example of the config file can be found here [**aw-config.yaml**](examples/conifg/aw-config.yaml) associated to the files described above are:
 
 ```yaml
-# TSV file with the name of the genome and the fasta location of the references used in WOLTKA, the file has no header and has the following format: name\tfasta_location
+# TSV file with the name of the genome and the fasta location of the references used in filterBAM, the file has no header and has the following format: name\tfasta_location
 genome_paths: genome-paths-list.tsv
-# Nodes and names dumps used for the WOLTKA analysis
+# Nodes and names dumps used for the filterBAM analysis
 names_dmp: names-mdmg.dmp
 nodes_dmp: nodes-mdmg.dmp
 # Sample name
 sample_name: "0e59dd2155"
-# Statistics of the mapping results from the WOLTKA analysis
+# Statistics of the mapping results from the filterBAM analysis
 filterBAM_stats: 0e59dd2155.filterBAM.dedup_stats-filtered.tsv.gz
-# Filter options for the WOLTKA table
+# Filter options for the filetrBAM table
 filterBAM_filter_conditions: { "breadth_exp_ratio": 0.5, "coverage_mean": 0.1 }
-# WOLTKA abundance table
+# filterBAM abundance table
 filterBAM_profiling_results: 0e59dd2155.filterBAM-none.tsv.gz
 # Results of the metaDMG analysis
 mdmg_results: 0e59dd2155.filterBAM-mdmg.weight-0.csv.gz
@@ -118,7 +117,7 @@ cpus: 16
 This will create all the files need for the next step:
 
 - **0e59dd2155.communities.tsv**: This file contains the estimated abundance table for the synthetic community. Columns are `Community`, `Taxon`, `Rank` and `Perc_rel_abund`
-- **0e59dd2155.filepaths.tsv**: This file contains the file paths for the reference genomes used in the WOLTKA analysis. Columns are `Taxon`, `TaxId`, `Accession` and `Fasta`
+- **0e59dd2155.filepaths.tsv**: This file contains the file paths for the reference genomes used in the filterBAM analysis. Columns are `Taxon`, `TaxId`, `Accession` and `Fasta`
 - **0e59dd2155.genome-compositions.tsv**: This file is the one controlling how the genomes are going to be processed and will contain the empirical values. We can change them to spike certain taxa to very high or very low coverage values. Anything added to this file (all genomes by default) will avoid the random generation of coverage, sequencing depth and other vlaues. Columns are `Taxon`, `Community`, `Coverage` and `onlyAncient`
   
 

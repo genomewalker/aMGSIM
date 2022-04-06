@@ -10,16 +10,16 @@ global:
   # Path to the AdapterRemoval binary
   AdapterRemoval: AdapterRemoval
   # Temporary folder
-  tmp_dir: .sim_reads
+  tmp-dir: .sim_reads
   # Number of cpus
   cpus: 16
   # Output dir
-  output_dir: example-data
+  output-dir: example-data
   # libprep single or double
   libprep: double
-
+  remove-adapters: True
 fragSim:
-  ancient_genomes: 0e59dd2155.json
+  ancient-genomes: 0e59dd2155.json
   modern:
     --case: True # Do not set the sequence to upper-case (default: uppercase the seqs.)
     --comp: False # [file] Base composition for the fragments (default none)
@@ -31,7 +31,7 @@ fragSim:
     --dist: False # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
     --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
 deamSim:
-  -mapdamage: 0e59dd2155.filterBAM-mdmg.misincorporation.weight-0.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
+  -mapdamage: 0e59dd2155.local.misincorporation.weight-1.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
   # v: nick frequency
   # l: length of overhanging ends (geometric parameter)
   # d: prob. of deamination of Cs in double-stranded parts
@@ -43,14 +43,3 @@ adptSim:
 art:
   --qprof1: False
   --qprof2: False
-# Experimental; not implemented yet
-AdapterRemoval:
-  --adapter1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATTCGATCTCGTATGC
-  --adapter2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATTT
-  --minlength: 30
-  --trimns: True
-  --collapse: True
-  --trimqualities: True
-  --minadapteroverlap: 1
-  --preserve5p: False
-  --minquality: 20

@@ -1,9 +1,11 @@
 # Table with genomes to use
-genome_table: examples/data/genome_list.txt
+genome-table: 0e59dd2155.filepaths.tsv
 # Abundace table
-abund_table: example_wAbund.txt
+abund-table: 0e59dd2155.communities.tsv
 # Table with specific genome's ancient properties
-genome_comp: genome-comp.tsv
+genome-comp: 0e59dd2155.genome-compositions.tsv
+# JSON file with the empirical read length frequencies calculated by filterBAM
+read-length-freqs: 0e59dd2155_read-length-freqs.json
 # Number of cpus. [Default: 1]
 cpus: 16
 # Minimum fragment length [Default: 30]
@@ -21,10 +23,11 @@ coverage: [0.1, 5]
 # Sequencing technology [Default: HS25]
 seqSys: HS25
 # Number of reads to generate per sample [Default: 1e6]
-num-reads: 5e6
+num-reads: 1e6
 # Desired final read length. Will be used by adptSim and ART [Default: 150]
 read-len: 150
 # Use single end library properties [Default: False]
 library: paired
 # Temporary folder
-tmp_dir: .sim_reads-example
+tmp-dir: .sim_reads-example
+enforce-cov: False
