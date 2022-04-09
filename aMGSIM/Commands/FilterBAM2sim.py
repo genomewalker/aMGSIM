@@ -358,12 +358,3 @@ def filterBAM2sim(args):
     community_file.to_csv(out_files["communities"], sep="\t", index=False)
     genome_paths_file.to_csv(out_files["paths"], sep="\t", index=False)
     genome_compositions.to_csv(out_files["compositions"], sep="\t", index=False)
-
-
-def opt_parse(args=None):
-    version = "Version: " + __version__
-    if args is None:
-        args = docopt(__doc__, version=version)
-    else:
-        args = docopt(__doc__, version=version, argv=args)
-    main(args)
