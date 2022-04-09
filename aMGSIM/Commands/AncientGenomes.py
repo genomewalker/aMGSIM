@@ -961,12 +961,3 @@ def get_ancient_genomes(args):
 
     with open(out_file, "w", encoding="utf-8") as outfile:
         print(ancient_genomes_json, file=outfile)
-
-
-def opt_parse(args=None):
-    version = "Version: " + __version__
-    if args is None:
-        args = docopt(__doc__, version=version)
-    else:
-        args = docopt(__doc__, version=version, argv=args)
-    main(args)

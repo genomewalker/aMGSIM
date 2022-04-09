@@ -1057,13 +1057,5 @@ def get_ancient_reads(args):
     log.info("Ancient synthetic reads generated.")
 
 
-def opt_parse(args=None):
-    version = "Version: " + __version__
-    if args is None:
-        args = docopt(__doc__, version=version)
-    else:
-        args = docopt(__doc__, version=version, argv=args)
-    main(args)
-
 
 # %%
