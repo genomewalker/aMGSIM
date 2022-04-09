@@ -64,10 +64,10 @@ from aMGSIM import __version__
 
 debug = False
 
+# From https://stackoverflow.com/questions/6974695/python-process-pool-non-daemonic
 
-# From
 class NoDaemonProcess(multiprocessing.Process):
-    @property
+        @property
     def daemon(self):
         return False
 
@@ -75,10 +75,8 @@ class NoDaemonProcess(multiprocessing.Process):
     def daemon(self, value):
         pass
 
-
 class NoDaemonContext(type(multiprocessing.get_context())):
     Process = NoDaemonProcess
-
 
 # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
 # because the latter is only a wrapper function, not a proper class.
