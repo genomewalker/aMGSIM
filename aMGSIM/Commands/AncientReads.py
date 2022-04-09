@@ -1,47 +1,5 @@
 #!/usr/bin/env python
 
-"""
-ancient-reads: Simulate ancient reads for each taxon in each synthetic
-               community
-
-Usage:
-  ancient-reads [options] <genome_table> <config>
-  ancient-reads -h | --help
-  ancient-reads --version
-
-Options:
-  <genome_table>      Taxon genome info.
-  <config>            Config parameters
-  -h --help           Show this screen.
-  -d --debug          Debug mode (no subprocesses; verbose output)
-  --version           Show version.
-
-Description:
-  Simulating ancient reads for each taxon in each synthetic community
-
-  genome_table
-  ------------
-  * tab-delimited
-  * must contain 2 columns
-    * "Taxon" = taxon name
-    * "Fasta" = genome fasta file path
-  * other columns are allowed
-
-  config
-  ------
-  * YAML with config parameters 
-    (Check https://github.com/genomewalker/aMGSIM for details)
-
-  Output
-  ------
-  * A set of read files for each sample (fragSim, deamSim, ART)
-    - read sequences are named by the taxon they originate from
-    - directory structure: OUTPUT_DIR/COMMUNITY/ancient-read_files
-  * A JSON file with the location of each file type (fragSim, deamSim, ART)
-"""
-
-# import
-# batteries
 from docopt import docopt
 import sys
 import os
@@ -927,7 +885,7 @@ def combine_fastx_files(
     return files
 
 
-def main(args):
+def get_ancient_reads(args):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
@@ -935,7 +893,7 @@ def main(args):
         force=True,
     )
     global debug
-    if args["--debug"]:
+    if args.debug:
         debug = True
     else:
         debug = False
@@ -944,11 +902,9 @@ def main(args):
     # sys.excepthook = exceptionHandler
 
     # simulating reads
-    args = f.validate_schema(args, d.schema_init_ar, debug)
-
-    config = f.get_config(
-        config=args["<config>"], schema=d.ar_schema_config, debug=debug
-    )
+    cfg = vars(args)
+    cfg = f.validate_schema(cfg, d.schema_init_ar, debug)
+    config = f.get_config(config=cfg["config"], schema=d.ar_schema_config, debug=debug)
 
     # art_params = config_params['art_config']
     config_params = config["global"]
@@ -984,7 +940,7 @@ def main(args):
 
     log.info("Loading genomes...")
     # load tables
-    genome_table = f.load_genome_table(args["<genome_table>"])
+    genome_table = f.load_genome_table(args.genome_table, nproc=config_params["cpus"])
 
     log.info("Normalizing genome names...")
     genome_table = rename_genomes(

@@ -1,30 +1,4 @@
 #!/usr/bin/env python
-
-"""
-filterBAM2sim: Estimate coverage, depth and other properties for each genome
-                 in sample processed with bam-filter
-
-Usage:
-  filterBAM2sim [options] <config>
-  filterBAM2sim -h | --help
-  filterBAM2sim --version
-
-Options:
-  <config>       Config parameters
-  -d --debug     Debug mode (no subprocesses; verbose output)
-  -h --help      Show this screen.
-  --version      Show version.
-
-Description:
-  Simulating ancient reads for each taxon in each synthetic community
-
-  Output
-  ------
-  * A JSON file with the read properties for the selected ancient genomes
-  * A TSV file with the read abundances for the ancient/modern genomes in each
-    synthetic community
-"""
-
 # import
 # batteries
 from docopt import docopt
@@ -235,7 +209,7 @@ def create_output_files(prefix):
 log = logging.getLogger("my_logger")
 
 
-def main(args):
+def filterBAM2sim(args):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
@@ -244,7 +218,8 @@ def main(args):
     )
     # simulating reads
     global debug
-    if args["--debug"]:
+
+    if args.debug:
         debug = True
     else:
         debug = False
@@ -252,10 +227,9 @@ def main(args):
 
     sys.excepthook = exceptionHandler
     # simulating reads
-    args = f.validate_schema(args, d.schema_init_w, debug)
-    config = f.get_config(
-        config=args["<config>"], schema=d.w_schema_config, debug=debug
-    )
+    cfg = vars(args)
+    cfg = f.validate_schema(cfg, d.schema_init_w, debug)
+    config = f.get_config(config=cfg["config"], schema=d.w_schema_config, debug=debug)
     taxonomic_rank = config["taxonomic-rank"]
     # load tables
     log.info("Loading genome paths file...")
