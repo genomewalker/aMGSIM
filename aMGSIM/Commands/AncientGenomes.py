@@ -1,40 +1,5 @@
 #!/usr/bin/env python
 
-"""
-ancient-genomes: Estimate coverage, depth and other properties for each genome
-                 in each synthetic community
-
-Usage:
-  ancient-genomes [options] <config>
-  ancient-genomes -h | --help
-  ancient-genomes --version
-
-Options:
-  <config>       Config parameters
-  -d --debug     Debug mode (no subprocesses; verbose output)
-  -h --help      Show this screen.
-  --version      Show version.
-
-Description:
-  Simulating ancient reads for each taxon in each synthetic community
-
-  config
-  ------
-  * tab-delimited
-  * must contain 3 columns
-    * "Community" = community ID (ie., sample ID)
-    * "Taxon" = taxon name
-    * "Perc_rel_abund" = percent relative abundance of the taxon
-
-  Output
-  ------
-  * A JSON file with the read properties for the selected ancient genomes
-  * A TSV file with the read abundances for the ancient/modern genomes in each
-    synthetic community
-"""
-
-# import
-# batteries
 from distutils.log import info
 from statistics import mode
 from docopt import docopt
@@ -791,7 +756,7 @@ def round_to_nreads(number_set, n_reads, digit_after_decimal=0):
 log = logging.getLogger("my_logger")
 
 
-def main(args):
+def get_ancient_genomes(args):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
@@ -800,7 +765,7 @@ def main(args):
     )
     # simulating reads
     global debug
-    if args["--debug"]:
+    if args.debug:
         debug = True
     else:
         debug = False
@@ -810,10 +775,9 @@ def main(args):
     # sys.excepthook = exceptionHandler
 
     # simulating reads
-    args = f.validate_schema(args, d.schema_init_ag, debug)
-    config = f.get_config(
-        config=args["<config>"], schema=d.ag_schema_config, debug=debug
-    )
+    cfg = vars(args)
+    cfg = f.validate_schema(cfg, d.schema_init_ag, debug)
+    config = f.get_config(config=cfg["config"], schema=d.ag_schema_config, debug=debug)
 
     # Test that both genome composition of abundance table are given
     if not config["abund-table"] and not config["genome-comp"]:
@@ -997,12 +961,3 @@ def main(args):
 
     with open(out_file, "w", encoding="utf-8") as outfile:
         print(ancient_genomes_json, file=outfile)
-
-
-def opt_parse(args=None):
-    version = "Version: " + __version__
-    if args is None:
-        args = docopt(__doc__, version=version)
-    else:
-        args = docopt(__doc__, version=version, argv=args)
-    main(args)

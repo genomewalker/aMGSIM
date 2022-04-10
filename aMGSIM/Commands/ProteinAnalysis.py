@@ -138,29 +138,20 @@ def obj_dict(obj):
 # Read files and get coordinates
 
 
-def opt_parse(args=None):
-    version = "Version: " + __version__
-    if args is None:
-        args = docopt(__doc__, version=version)
-    else:
-        args = docopt(__doc__, version=version, argv=args)
-    main(args)
-
-
-def main(args):
+def do_proteins_analysis(args):
     global debug
-    if args["--debug"]:
+    if args.debug:
         debug = True
     else:
         debug = False
 
     sys.excepthook = exceptionHandler
 
-    nproc = int(args["--procs"])
-    ncpu = int(args["--cpus"])
-    min_len = int(args["--min-len"])
+    nproc = args.processes
+    ncpu = args.threads
+    min_len = args.gene_min_length
 
-    with open(args["<files>"], "r") as json_file:
+    with open(args.abund_read_file, "r") as json_file:
         filename = json_file
         files = json.load(json_file)
 
@@ -169,7 +160,7 @@ def main(args):
 
     comms = list(files["reads"].keys())
 
-    tmp_dir = args["--tmp"]
+    tmp_dir = args.tmp
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
 
@@ -177,7 +168,7 @@ def main(args):
     if not os.path.isdir(tmp_damage):
         os.makedirs(tmp_damage, exist_ok=True)
 
-    out_dir = args["--out-dir"]
+    out_dir = args.output
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir, exist_ok=True)
 
@@ -186,7 +177,7 @@ def main(args):
     if p_procs > len(genome_files):
         p_procs = len(genome_files)
 
-    logging.info("Predicting genes from genomes usin {} processes...".format(p_procs))
+    logging.info("Predicting genes from genomes using {} processes...".format(p_procs))
     output_dir = os.path.join(tmp_dir, "gene_prediction")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
@@ -218,7 +209,7 @@ def main(args):
         min_len=min_len,
         outdir=tmp_damage,
         debug=debug,
-        nproc=nproc,
+        nproc=ncpu,
     )
 
     logging.info("Finding damage in codons...")
@@ -230,7 +221,7 @@ def main(args):
     if debug is True:
         data = list(map(func, comm_files))
     else:
-        p = MyPool(ncpu)
+        p = MyPool(nproc)
         data = list(
             tqdm.tqdm(
                 p.imap_unordered(func, comm_files),

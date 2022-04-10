@@ -89,18 +89,18 @@ genome_selection_options = ["random", "most_abundant", "least_abundant"]
 # }
 
 schema_init_ag = {
-    "<config>": Use(open, error="config should be readable"),
+    "config": Use(open, error="config should be readable"),
     object: object,
 }
 
 schema_init_w = {
-    "<config>": Use(open, error="config should be readable"),
+    "config": Use(open, error="config should be readable"),
     object: object,
 }
 
 schema_init_ar = {
-    "<config>": Use(open, error="config should be readable"),
-    "<genome_table>": Use(open, error="genome_table should be readable"),
+    "config": Use(open, error="config should be readable"),
+    "genome_table": Use(open, error="genome_table should be readable"),
     object: object,
 }
 
