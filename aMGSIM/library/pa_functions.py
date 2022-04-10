@@ -83,7 +83,7 @@ def get_gene_coordinates(fna):
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("-1", "-")
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("1", "+")
     df_nt["Chromosome"] = df_nt["name"].str.extract(r"(\S+)_\d+")
-    df_nt.drop(["description", "sequence"], 1)
+    df_nt.drop(["description", "sequence"], axis=1)
     df_nt = df_nt[["name", "type", "Chromosome", "Start", "End", "Strand"]]
     df_nt = df_nt.rename(columns={"name": "gene_name"})
     df_nt = pr.PyRanges(df_nt)
@@ -109,7 +109,7 @@ def get_intersections(reads, genes, genome, min_len=0):
     # j = df_reads.overlap(df_genes, invert=True)
     gr.intersect_length = gr.lengths()
     # print(j.df[j.df['intersect_length'].astype(int) != j.df['length'].astype(int)])
-    gr = pr.PyRanges(gr.df.drop(["Strand"], 1))
+    gr = pr.PyRanges(gr.df.drop(["Strand"], axis=1))
     # TODO Optimize retrieval of fasta sequences
     gr.intersect_seq = pr.get_fasta(gr, genome[0])
     gr.intersect_seq = gr.df.parallel_apply(revcomp, var="intersect_seq", axis=1)
@@ -430,7 +430,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
                 "Strand": "Strand_gene",
             }
             r2g_intersections = r2g_intersections.join(
-                genes.drop("type"), report_overlap=True
+                genes.drop("type"), report_overlap=True, apply_strand_suffix=False
             )
             r2g_intersections = pr.PyRanges(
                 r2g_intersections.df[
