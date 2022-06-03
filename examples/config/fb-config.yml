@@ -1,0 +1,23 @@
+# Table with genomes to use
+genome-paths: genome-paths-list.tsv
+names-dmp: names.dmp
+nodes-dmp: nodes.dmp
+sample-name: "0e59dd2155"
+# Abundace table
+filterBAM-stats: 0e59dd2155.woltka.dedup_stats-filtered.tsv.gz
+filterBAM-filter-conditions: { "breadth_exp_ratio": 0.75, "coverage_mean": 0 }
+# Table with specific genome's ancient properties
+use-restimated-proportions: True
+# Table with specific genome's ancient properties
+mdmg-results: 0e59dd2155.woltka-mdmg.weight-1.csv.gz
+mdmg-filter-conditions: { "D_max": 0.1, "phi": 500, "q": 0.25 }
+taxonomic-rank: "genus"
+# Number of modern genomes
+max-genomes-nondamaged: 10
+# random, most_abundant, least_abundant
+max-genomes-nondamaged-selection: "most_abundant"
+# Number of ancient genomes
+max-genomes-damaged-selection: "most_abundant"
+max-genomes-damaged: 10
+# Number of cpus. [Default: 1]
+cpus: 16

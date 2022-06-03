@@ -13,7 +13,7 @@ from docopt import docopt
 ## application
 from MGSIM.Commands import Communities
 
-from aMGSIM.Commands.FilterBAM2sim import filterBAM2sim
+from aMGSIM.Commands.Estimate import estimate
 from aMGSIM.Commands.AncientGenomes import get_ancient_genomes
 from aMGSIM.Commands.AncientReads import get_ancient_reads
 from aMGSIM.Commands.ProteinAnalysis import do_proteins_analysis
@@ -42,7 +42,7 @@ def main():
             logging.DEBUG if args.debug else logging.INFO
         )
         if args.action == "estimate":
-            filterBAM2sim(args)
+            estimate(args)
         elif args.action == "ancient-genomes":
             get_ancient_genomes(args)
         elif args.action == "ancient-reads":

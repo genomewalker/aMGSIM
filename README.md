@@ -42,7 +42,7 @@ pip install -e .
 
 aMGSIM incorporates three new subcommands to generate synthetic metagenomic reads:
 
-- **filterBAM2sim**: Estimate coverage, depth and other properties for each genome in sample processed with filterBAM
+- **estimate**: Estimate coverage, depth and other properties for each genome in sample processed with filterBAM
 - **ancient-genomes**: Estimate coverage, depth and other properties for each genome in each synthetic community
 - **ancient-reads**: Simulate ancient reads for each taxon in each synthetic community
 - **protein-analysis**: Tracking damage to the codon positions of each simulated read. 
@@ -53,15 +53,15 @@ You can access the list of commands by:
 $ aMGSIM --list
 
 Available Commands:
-communities | filterBAM2sim | ancient-genomes | ancient-reads | protein-analysis
+communities | estimate | ancient-genomes | ancient-reads | protein-analysis
 ```
 We have two different approaches to generate the synthetic communities:
 
-1. We can use empirical results from [filterBAM]() and [metaDMG](#) as shown [here](#) with the subcommand `filterBAM2sim`.
+1. We can use empirical results from [filterBAM]() and [metaDMG](#) as shown [here](#) with the subcommand `estimate`.
 2. We can use the subcommand `communities` from [MGSIM](https://github.com/nick-youngblut/MGSIM/)
 
 
-> We recommend to use the filterBAM2sim subcommand
+> We recommend to use the estimate subcommand
 
 
 To use the empirical data from filterBAM and metaDMG, you will need the following files:
@@ -75,7 +75,7 @@ To use the empirical data from filterBAM and metaDMG, you will need the followin
 Then you can use the command as follows:
 
 ```bash
-aMGSIM filterBAM2sim agw-config.yaml
+aMGSIM estimate f2b-config.yaml
 ```
 
 And example of the config file can be found here [**aw-config.yaml**](examples/conifg/aw-config.yaml) associated to the files described above are:

@@ -203,7 +203,7 @@ def get_arguments(argv=None):
         help="This will call the MGSIM communities command to generate random taxon abundances",
         parents=[parent_parser],
     )
-    parser_filterBAM2sim = sub_parsers.add_parser(
+    parser_estimate = sub_parsers.add_parser(
         "estimate",
         help="Estimate coverage, depth and other properties for each genome in a sample processed with bam-filter",
         parents=[parent_parser],
@@ -228,10 +228,8 @@ def get_arguments(argv=None):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    filterBAM2sim_required_args = parser_filterBAM2sim.add_argument_group(
-        "required arguments"
-    )
-    filterBAM2sim_required_args.add_argument(
+    estimate_required_args = parser_estimate.add_argument_group("required arguments")
+    estimate_required_args.add_argument(
         "config",
         type=lambda x: is_valid_file(parser, x, "config"),
         help=help_msg["config"],

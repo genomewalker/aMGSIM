@@ -31,7 +31,7 @@ fragSim:
     --dist: False # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
     --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
 deamSim:
-  -mapdamage: 0e59dd2155.local.misincorporation.weight-1.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
+  -mapdamage: 0e59dd2155.woltka-mdmg.misincorporation.weight-1.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
   # v: nick frequency
   # l: length of overhanging ends (geometric parameter)
   # d: prob. of deamination of Cs in double-stranded parts
