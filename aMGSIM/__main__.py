@@ -41,7 +41,7 @@ def main():
         logging.getLogger("my_logger").setLevel(
             logging.DEBUG if args.debug else logging.INFO
         )
-        if args.action == "filterBAM2sim":
+        if args.action == "estimate":
             filterBAM2sim(args)
         elif args.action == "ancient-genomes":
             get_ancient_genomes(args)

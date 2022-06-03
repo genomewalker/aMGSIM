@@ -204,7 +204,7 @@ def get_arguments(argv=None):
         parents=[parent_parser],
     )
     parser_filterBAM2sim = sub_parsers.add_parser(
-        "filterBAM2sim",
+        "estimate",
         help="Estimate coverage, depth and other properties for each genome in a sample processed with bam-filter",
         parents=[parent_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
