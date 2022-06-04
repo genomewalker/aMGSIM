@@ -1,11 +1,11 @@
 # Table with genomes to use
-genome-table: 0e59dd2155.filepaths.tsv
+genome-table: 8bf92435d8.filepaths.tsv
 # Abundace table
-abund-table: 0e59dd2155.communities.tsv
+abund-table: 8bf92435d8.communities.tsv
 # Table with specific genome's ancient properties
-genome-comp: 0e59dd2155.genome-compositions.tsv
+genome-comp: 8bf92435d8.genome-compositions.tsv
 # JSON file with the empirical read length frequencies calculated by filterBAM
-read-length-freqs: 0e59dd2155_read-length-freqs.json
+read-length-freqs: 8bf92435d8.dedup_read-length-freqs.json
 # Number of cpus. [Default: 1]
 cpus: 16
 # Minimum fragment length [Default: 30]

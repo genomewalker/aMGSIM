@@ -2,15 +2,16 @@
 genome-paths: genome-paths-list.tsv
 names-dmp: names.dmp
 nodes-dmp: nodes.dmp
-sample-name: "0e59dd2155"
+acc2taxid: acc2taxid.map.gz
+sample-name: "8bf92435d8"
 # Abundace table
-filterBAM-stats: 0e59dd2155.woltka.dedup_stats-filtered.tsv.gz
+filterBAM-stats: 8bf92435d8.dedup_stats-filtered.tsv.gz
 filterBAM-filter-conditions: { "breadth_exp_ratio": 0.75, "coverage_mean": 0 }
 # Table with specific genome's ancient properties
 use-restimated-proportions: True
 # Table with specific genome's ancient properties
-mdmg-results: 0e59dd2155.woltka-mdmg.weight-1.csv.gz
-mdmg-filter-conditions: { "D_max": 0.1, "phi": 500, "q": 0.25 }
+mdmg-results: 8bf92435d8.tp-mdmg.local.weight-1.csv.gz
+mdmg-filter-conditions: { "Bayesian_D_max": 0.1, "Bayesian_z": 2.5 }
 taxonomic-rank: "genus"
 # Number of modern genomes
 max-genomes-nondamaged: 10

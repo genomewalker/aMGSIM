@@ -21,8 +21,7 @@ import tqdm
 from collections import OrderedDict
 from aMGSIM import __version__
 import taxopy as txp
-
-debug = False
+from aMGSIM.library import cli as c
 
 
 def exceptionHandler(
@@ -31,6 +30,7 @@ def exceptionHandler(
     """Print user friendly error messages normally, full traceback if DEBUG on.
     Adapted from http://stackoverflow.com/questions/27674602/hide-traceback-unless-a-debug-flag-is-set
     """
+    debug = c.is_debug()
     if debug:
         print("\n*** Error:")
         # raise
@@ -209,7 +209,7 @@ def create_output_files(prefix):
 log = logging.getLogger("my_logger")
 
 
-def filterBAM2sim(args):
+def estimate(args):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
@@ -217,8 +217,6 @@ def filterBAM2sim(args):
         force=True,
     )
     # simulating reads
-    global debug
-
     if args.debug:
         debug = True
     else:
@@ -234,18 +232,19 @@ def filterBAM2sim(args):
     # load tables
     log.info("Loading genome paths file...")
     genome_paths = w.load_genome_paths(config["genome-paths"])
-
     log.info("Loading filterBAM stats file...")
     filterBAM_stats = w.load_filterBAM_stats_table(config["filterBAM-stats"])
     filterBAM_stats_n = filterBAM_stats.shape[0]
-
     log.info("Generating taxonomic information...")
     taxdb = txp.TaxDb(
         nodes_dmp=config["nodes-dmp"], names_dmp=config["names-dmp"], keep_files=True
     )
 
     taxonomy_info, tax_ranks = w.get_taxonomy_info(
-        refids=filterBAM_stats["reference"].values, taxdb=taxdb, nprocs=config["cpus"]
+        refids=filterBAM_stats["reference"].values,
+        taxdb=taxdb,
+        acc2taxid=config["acc2taxid"],
+        nprocs=config["cpus"],
     )
 
     filterBAM_stats["taxid"] = filterBAM_stats["reference"].apply(

@@ -8,17 +8,8 @@ from multiprocessing import Pool
 import tqdm
 from functools import partial
 from aMGSIM.library import functions as f
+from aMGSIM.library import cli as c
 
-
-debug = False
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(levelname)s ::: %(asctime)s ::: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    force=True,
-)
-log = logging.getLogger("my_logger")
-log.setLevel(logging.DEBUG if debug else logging.INFO)
 
 # From https://stackoverflow.com/a/59737793/15704171
 def largestRemainderMethod(pd_series, decimals=1):
@@ -228,14 +219,16 @@ def filter_filterBAM_taxa(df, filter_conditions):
 
 def get_tax(ref, parms):
     taxdb = parms["taxdb"]
-    taxid = txp.taxid_from_name(ref, taxdb)[0]
+    acc2taxid = parms["acc2taxid"]
+    taxid = acc2taxid[ref]
+    # taxid = txp.taxid_from_name(ref, taxdb)[0]
     taxonomy_info = txp.Taxon(taxid, taxdb).rank_name_dictionary
     taxonomy_info["taxid"] = taxid
     taxonomy_info["ref"] = ref
     return taxonomy_info
 
 
-def get_taxonomy_info(refids, taxdb, nprocs=1):
+def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
     """Function to get the references taxonomic information for a given taxonomy id
 
     Args:
@@ -245,9 +238,19 @@ def get_taxonomy_info(refids, taxdb, nprocs=1):
     Returns:
         dict: A list of taxonomy information
     """
-    parms = {"taxdb": taxdb}
+
+    acc2taxid_df = pd.read_csv(acc2taxid, sep="\t", index_col=None)[
+        ["accession", "taxid"]
+    ].rename(columns={"accession": "reference"}, inplace=False)
+    # Filter rows in refids from dataframe
+    acc2taxid_df = acc2taxid_df.loc[acc2taxid_df["reference"].isin(refids)]
+    acc2taxid_dict = acc2taxid_df.set_index("reference").T.to_dict("records")
+
+    debug = c.is_debug()
+
+    parms = {"taxdb": taxdb, "acc2taxid": acc2taxid_dict[0]}
     func = partial(get_tax, parms=parms)
-    if debug is True:
+    if debug is True or len(refids) < 100000:
         taxonomy_info = list(map(func, refids))
     else:
         p = Pool(nprocs, initializer=f.initializer, initargs=(parms,))
@@ -263,35 +266,35 @@ def get_taxonomy_info(refids, taxdb, nprocs=1):
         )
         p.close()
         p.join()
-        exclude = ["taxid", "ref"]
-        tax_ranks = []
+    exclude = ["taxid", "ref"]
+    tax_ranks = []
 
-        for k in taxonomy_info[0].keys():
-            if k not in exclude:
-                tax_ranks.append(k)
+    for k in taxonomy_info[0].keys():
+        if k not in exclude:
+            tax_ranks.append(k)
 
-        taxonomy_info = {i["ref"]: i for i in taxonomy_info}
+    taxonomy_info = {i["ref"]: i for i in taxonomy_info}
     return taxonomy_info, tax_ranks
 
 
 def check_if_genomes_left(df):
     if df.shape[0] == 0:
-        log.error(f"::: No damaged genomes found. Exiting.")
+        logging.error(f"::: No damaged genomes found. Exiting.")
         exit(0)
 
 
 def check_if_nrows_is_smaller_than_ntaxa(df, n_taxa):
     if n_taxa > df.shape[0] and df.shape[0] > 0:
         n_taxa = len(df)
-        log.info(f"::: The number of taxa is too high. Setting to {n_taxa}")
+        logging.info(f"::: The number of taxa is too high. Setting to {n_taxa}")
     return n_taxa
 
 
 def get_missing_genomes(df, stats_df, n_taxa, n_taxa_first, tax_rank):
-    log.info(
+    logging.info(
         f"::: We tried to get {n_taxa:,} genomes at {tax_rank} level but only found {n_taxa_first:,}."
     )
-    log.info(f"::: Resampling the genome table.")
+    logging.info(f"::: Resampling the genome table.")
     # we will sample the table with genomes to get as closer as we can
     # while mainting a diverse set of genomes
     # get an initial set of genomes as big as we can
@@ -300,7 +303,7 @@ def get_missing_genomes(df, stats_df, n_taxa, n_taxa_first, tax_rank):
     if n_taxa_left <= stats_df.shape[0]:
         df2 = stats_df.sample(n=n_taxa_left)
     else:
-        log.info(
+        logging.info(
             f"::: Unfortunately there are not enough genomes, selecting {stats_df.shape[0]:,} genomes left."
         )
         df2 = stats_df
@@ -328,7 +331,7 @@ def select_taxa(
     """
     n_taxa_first = 0
     if mode == "most_abundant":
-        log.info(f"::: Selecting most abundant taxa")
+        logging.info(f"::: Selecting most abundant taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
@@ -366,7 +369,7 @@ def select_taxa(
             )
 
     elif mode == "least_abundant":
-        log.info(f"::: Selecting least abundant taxa")
+        logging.info(f"::: Selecting least abundant taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
@@ -403,7 +406,7 @@ def select_taxa(
                 tax_rank=tax_rank,
             )
     elif mode == "random":
-        log.info("::: Selecting random taxa")
+        logging.info("::: Selecting random taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)

@@ -7,8 +7,6 @@ global:
   adptSim: adptSim
   # Path to the art_illumina binary
   art: art_illumina
-  # Path to the AdapterRemoval binary
-  AdapterRemoval: AdapterRemoval
   # Temporary folder
   tmp-dir: .sim_reads
   # Number of cpus
@@ -17,9 +15,10 @@ global:
   output-dir: example-data
   # libprep single or double
   libprep: double
+  # Should the adapters added by adapSim be removed after ART?
   remove-adapters: True
 fragSim:
-  ancient-genomes: 0e59dd2155.json
+  ancient-genomes: 8bf92435d8.json
   modern:
     --case: True # Do not set the sequence to upper-case (default: uppercase the seqs.)
     --comp: False # [file] Base composition for the fragments (default none)
@@ -31,7 +30,7 @@ fragSim:
     --dist: False # [file] Distance from ends to consider  (default: 1) if this is not specified, the base composition will only reflect the chromosome file used
     --norev: False # Do not reverse complement (default: rev. comp half of seqs.)
 deamSim:
-  -mapdamage: 0e59dd2155.woltka-mdmg.misincorporation.weight-1.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
+  -mapdamage: 8bf92435d8.tp-mdmg.local.misincorporation.weight-1.txt.gz #  Read the miscorporation file [mis.txt] produced by metaDMG
   # v: nick frequency
   # l: length of overhanging ends (geometric parameter)
   # d: prob. of deamination of Cs in double-stranded parts
