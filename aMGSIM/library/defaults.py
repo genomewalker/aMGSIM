@@ -304,11 +304,6 @@ ar_schema_config = {
             lambda x: shutil.which(x) is not None,
             error="art_illumina executable not found",
         ),
-        "AdapterRemoval": And(
-            str,
-            lambda x: shutil.which(x) is not None,
-            error="AdapterRemoval executable not found",
-        ),
         "libprep": And(
             str,
             lambda x: x in ["single", "double"],

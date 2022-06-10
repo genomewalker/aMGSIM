@@ -1057,5 +1057,4 @@ def get_ancient_reads(args):
     log.info("Ancient synthetic reads generated.")
 
 
-
 # %%
