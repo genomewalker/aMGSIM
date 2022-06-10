@@ -190,9 +190,9 @@ def run_art(exe, params, seqSys, fasta, ofile, read_len, library, debug):
             cmd = "{exe} {params} -p -c 1 -ss {seqSys} -l {read_len} -amp -na -o {ofile} -i {fasta}"
     elif library == "se":
         if params["--qprof1"] and params["--qprof2"]:
-            cmd = "{exe} {params} -c 1 -l {read_len} -amp -na -o {ofile} -i {fasta}"
+            cmd = "{exe} {params} -c 1 -l {read_len} -amp -na -o {ofile}SR -i {fasta}"
         else:
-            cmd = "{exe} {params} -c 1 -ss {seqSys} -l {read_len} -amp -na -o {ofile} -i {fasta}"
+            cmd = "{exe} {params} -c 1 -ss {seqSys} -l {read_len} -amp -na -o {ofile}SR -i {fasta}"
 
     cmd = cmd.format(
         exe=exe,
@@ -392,23 +392,30 @@ def collect_file_names(
         r1 = f"{art_ofile}1.fq"
         r2 = f"{art_ofile}2.fq"
         sr = None
+        files = {
+            "comm": x["comm"],
+            "taxon": x["taxon"],
+            "frag_type": frag_type,
+            "fragSim_ofile": fragSim_ofile,
+            "deamSim_ofile": deamSim_ofile,
+            "adptSim_ofile": adptSim_ofile,
+            "art_ofile_r1": r1,
+            "art_ofile_r2": r2,
+        }
     else:
         r1 = None
         r2 = None
-        sr = "{art_ofile}fq"
+        sr = f"{art_ofile}SR.fq"
+        files = {
+            "comm": x["comm"],
+            "taxon": x["taxon"],
+            "frag_type": frag_type,
+            "fragSim_ofile": fragSim_ofile,
+            "deamSim_ofile": deamSim_ofile,
+            "adptSim_ofile": adptSim_ofile,
+            "art_ofile_sr": sr,
+        }
 
-        # Collect file names
-    files = {
-        "comm": x["comm"],
-        "taxon": x["taxon"],
-        "frag_type": frag_type,
-        "fragSim_ofile": fragSim_ofile,
-        "deamSim_ofile": deamSim_ofile,
-        "adptSim_ofile": adptSim_ofile,
-        "art_ofile_r1": r1,
-        "art_ofile_r2": r2,
-        "art_ofile_sr": sr,
-    }
     return files
 
 
@@ -693,7 +700,10 @@ def rename_reads(records, pattern, comm, taxon, frag_type, fastx, remove_adapter
         # 8: length
         # 9: damage positions in read
         if fastx == "fastq":
-            name = f"{comm}___{m1.group(1)}---{i}:{frag_type}:{m1.group(2)}:{m1.group(3)}:{m1.group(4)}:{m1.group(5)}:{m1.group(6)}/{m1.group(7)}"
+            if len(m1.groups()) >= 7:
+                name = f"{comm}___{m1.group(1)}---{i}:{frag_type}:{m1.group(2)}:{m1.group(3)}:{m1.group(4)}:{m1.group(5)}:{m1.group(6)}/{m1.group(7)}"
+            else:
+                name = f"{comm}___{m1.group(1)}---{i}:{frag_type}:{m1.group(2)}:{m1.group(3)}:{m1.group(4)}:{m1.group(5)}:{m1.group(6)}"
             if remove_adapters:
                 record = record[int(0) : int(m1.group(5))]
         elif fastx == "fasta":
@@ -717,15 +727,23 @@ def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
         Output file path
     """
     output_file = os.path.join(output_dir, output_file)
-
-    if fastx == "fastq":
-        p0 = re.compile("(\S+)---(\S+)___art-(\S+).\d.fq")
-        p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$")
-    elif fastx == "fasta":
-        p0 = re.compile("(\S+)---(\S+)___\S+-(\S+).fasta\S+")
-        p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
     with open(output_file, "w") as outFH:
         for in_file in read_files:
+            if fastx == "fastq":
+                if "SR" not in os.path.split(in_file)[1]:
+                    p0 = re.compile("(\S+)---(\S+)___art-(ancient|modern).\d.fq")
+                    p1 = re.compile(
+                        "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$"
+                    )
+                else:
+                    p0 = re.compile("(\S+)---(\S+)___art-(ancient|modern).SR.fq")
+                    p1 = re.compile(
+                        "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d$"
+                    )
+            elif fastx == "fasta":
+                p0 = re.compile("(\S+)---(\S+)___\S+-(\S+).fasta\S+")
+                p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
+
             m0 = re.match(p0, os.path.split(in_file)[1])
             comm = m0.group(1)
             taxon = m0.group(2)
@@ -762,7 +780,6 @@ def _combine_fastq_types(
     output_dir = os.path.join(output_dir, str(comm))
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-
     if "r1" in file_type:
         r1 = list(
             set(
@@ -784,7 +801,6 @@ def _combine_fastq_types(
             "pair": "R1",
             "file": R1_files,
         }
-
     elif "r2" in file_type:
         r2 = list(
             set(
@@ -805,6 +821,27 @@ def _combine_fastq_types(
             "file_type": file_type.replace("_r2", ""),
             "pair": "R2",
             "file": R2_files,
+        }
+    elif "sr" in file_type:
+        sr = list(
+            set(
+                [s[file_type] for s in data_modern]
+                + [s[file_type] for s in data_ancient]
+            )
+        )
+        sr = sorted(sr)
+        SR_files = _combine_reads(
+            read_files=sr,
+            output_dir=output_dir,
+            output_file=f"comm-{comm}_{suffix}.fq",
+            fastx="fastq",
+            remove_adapters=remove_adapters,
+        )
+        files = {
+            "comm": comm,
+            "file_type": file_type.replace("_r2", ""),
+            "pair": "SR",
+            "file": SR_files,
         }
     else:
         sr = list(
@@ -860,10 +897,12 @@ def combine_fastx_files(
     files = {
         "art_ofile_r1": "art",
         "art_ofile_r2": "art",
+        "art_ofile_sr": "art",
         "fragSim_ofile": "fragSim",
         "deamSim_ofile": "deamSim",
     }
-    if any(x in file_type for x in ["r1", "r2"]):
+
+    if any(x in file_type for x in ["r1", "r2", "sr"]):
         files = _combine_fastq_types(
             file_type=file_type,
             suffix=files[file_type],
@@ -993,6 +1032,8 @@ def get_ancient_reads(args):
     comms = list(
         set([s["comm"] for s in ancient_files] + [s["comm"] for s in modern_files])
     )
+    files = [item for item in ancient_files[0] if "file" in item]
+    files = [item for item in files if "adptSim" not in item]
 
     func = partial(
         combine_fastx_files,
@@ -1005,7 +1046,6 @@ def get_ancient_reads(args):
 
     log.info("Combining reads by sample...")
 
-    files = ["art_ofile_r1", "art_ofile_r2", "fragSim_ofile", "deamSim_ofile"]
     comm_files = list(itertools.product(comms, files))
     if debug is True:
         files = list(map(func, comm_files))
