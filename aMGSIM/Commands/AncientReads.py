@@ -726,8 +726,10 @@ def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
     output_file : str
         Output file path
     """
-    output_file = os.path.join(output_dir, output_file)
-    with open(output_file, "w") as outFH:
+    output_file = os.path.join(output_dir, f"{output_file}.gz")
+    encoding = guess_type(output_file)[1]  # uses file extension
+    _open = partial(gzip.open, mode="wt") if encoding == "gzip" else open
+    with _open(output_file) as outFH:
         for in_file in read_files:
             if fastx == "fastq":
                 if "SR" not in os.path.split(in_file)[1]:
@@ -791,7 +793,7 @@ def _combine_fastq_types(
         R1_files = _combine_reads(
             read_files=r1,
             output_dir=output_dir,
-            output_file=f"comm-{comm}_{suffix}.1.fq",
+            output_file=f"{comm}_{suffix}.1.fq",
             fastx="fastq",
             remove_adapters=remove_adapters,
         )
@@ -812,7 +814,7 @@ def _combine_fastq_types(
         R2_files = _combine_reads(
             read_files=r2,
             output_dir=output_dir,
-            output_file=f"comm-{comm}_{suffix}.2.fq",
+            output_file=f"{comm}_{suffix}.2.fq",
             fastx="fastq",
             remove_adapters=remove_adapters,
         )
@@ -833,7 +835,7 @@ def _combine_fastq_types(
         SR_files = _combine_reads(
             read_files=sr,
             output_dir=output_dir,
-            output_file=f"comm-{comm}_{suffix}.fq",
+            output_file=f"{comm}_{suffix}.fq",
             fastx="fastq",
             remove_adapters=remove_adapters,
         )
@@ -879,7 +881,7 @@ def _combine_fasta_types(
     SR_files = _combine_reads(
         read_files=sr,
         output_dir=output_dir,
-        output_file=f"comm-{comm}_{suffix}.fa",
+        output_file=f"{comm}_{suffix}.fa",
         fastx="fasta",
         remove_adapters=False,
     )
