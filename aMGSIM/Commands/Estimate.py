@@ -330,7 +330,9 @@ def estimate(args):
             "[^0-9a-zA-Z]+", "_", re.sub("s__", "", taxonomy_info[x]["species"])
         )
     )
-
+    genomes["Taxon"] = genomes[["Taxon", "reference"]].apply(
+        lambda row: "----".join(row.values.astype(str)), axis=1
+    )
     log.info("Generating files for aMGSIM")
     # generate aMGSIM input files
     # community file
