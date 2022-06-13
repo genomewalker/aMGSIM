@@ -334,16 +334,14 @@ def prepare_data_fragments(
 
     fragment_data = {}
 
-    fragSim_fname = f"{comm}---{taxon}___fragSim-{frag_type}"
+    fragSim_fname = f"{comm}---{taxon}___fragSim-{frag_type}{fragSim_frag_suffix}"
 
     fragments = pd.DataFrame(x[entry]["fragments"])
 
     fragment_data["seq_depth"] = x[entry]["seq_depth"]
 
     # Save fragmets
-    fragment_data["fragSim_frag_ofile"] = Path(tmp_dir, fragSim_fname).with_suffix(
-        fragSim_frag_suffix
-    )
+    fragment_data["fragSim_frag_ofile"] = Path(tmp_dir, fragSim_fname)
 
     fragments.to_csv(
         path_or_buf=fragment_data["fragSim_frag_ofile"],
@@ -351,26 +349,22 @@ def prepare_data_fragments(
         header=False,
         index=False,
     )
+    fragSim_fname = f"{comm}---{taxon}___fragSim-{frag_type}{fa_suffix_gz}"
+    fragment_data["fragSim_ofile"] = Path(tmp_dir, fragSim_fname)
 
-    fragment_data["fragSim_ofile"] = Path(tmp_dir, fragSim_fname).with_suffix(
-        fa_suffix_gz
+    deamSim_mis_fname = (
+        f"{comm}---{taxon}___deamSim_misincorporation-{frag_type}{txt_suffix}"
     )
 
-    deamSim_mis_fname = f"{comm}---{taxon}___deamSim_misincorporation-{frag_type}"
+    fragment_data["deamSim_mis_ofile"] = Path(tmp_dir, deamSim_mis_fname)
 
-    fragment_data["deamSim_mis_ofile"] = Path(tmp_dir, deamSim_mis_fname).with_suffix(
-        txt_suffix
-    )
+    deamSim_fname = f"{comm}---{taxon}___deamSim-{frag_type}{fa_suffix_gz}"
 
-    deamSim_fname = f"{comm}---{taxon}___deamSim-{frag_type}"
+    fragment_data["deamSim_ofile"] = Path(tmp_dir, deamSim_fname)
 
-    fragment_data["deamSim_ofile"] = Path(tmp_dir, deamSim_fname).with_suffix(
-        fa_suffix_gz
-    )
+    adptSim_fname = f"{comm}---{taxon}___adptSim-{frag_type}{fa_suffix}"
 
-    adptSim_fname = f"{comm}---{taxon}___adptSim-{frag_type}"
-
-    fragment_data["adptSim_ofile"] = Path(tmp_dir, adptSim_fname).with_suffix(fa_suffix)
+    fragment_data["adptSim_ofile"] = Path(tmp_dir, adptSim_fname)
 
     art_fname = f"{comm}---{taxon}___art-{frag_type}."
 
@@ -1087,7 +1081,7 @@ def get_ancient_reads(args):
     dir_name = Path(filename.name).parent
 
     suffix = ".json"
-    read_files_ofile = Path(dir_name, f"{file_name}_read-files").with_suffix(suffix)
+    read_files_ofile = Path(dir_name, f"{file_name}_read-files{suffix}")
 
     read_files_json = json.dumps(
         read_files, default=obj_dict, ensure_ascii=False, indent=4

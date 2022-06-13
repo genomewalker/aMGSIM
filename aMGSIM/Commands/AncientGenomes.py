@@ -944,13 +944,12 @@ def get_ancient_genomes(args):
     df_tsv = _get_read_abundances(ancient_genomes_data, n_reads=n_reads)
 
     suffix = ".json"
-    out_file = Path(dir_name, file_name).with_suffix(suffix)
+    out_file = Path(dir_name, f"{file_name}{suffix}")
 
     #
     suffix_tsv = ".tsv"
-    out_file_tsv = Path(dir_name, f"{file_name}_read-abundances").with_suffix(
-        suffix_tsv
-    )
+    out_file_tsv = Path(dir_name, f"{file_name}_read-abundances{suffix_tsv}")
+    
     df_tsv.to_csv(path_or_buf=out_file_tsv, sep="\t", header=True, index=False)
 
     ancient_genomes_json = json.dumps(

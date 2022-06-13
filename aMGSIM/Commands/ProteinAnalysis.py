@@ -112,8 +112,8 @@ logging.basicConfig(
 
 def combine_files(x, tmp_damage, out_dir):
     out_suffix = ".tsv.gz"
-    fname = f"{x}_aa-damage"
-    outfile = Path(out_dir, fname).with_suffix(out_suffix)
+    fname = f"{x}_aa-damage{out_suffix}"
+    outfile = Path(out_dir, fname)
     files = glob.glob(str(Path(tmp_damage, x + "*")))
     li = []
 

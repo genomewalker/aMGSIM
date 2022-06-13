@@ -476,8 +476,8 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
 
             out_suffix = ".tsv.gz"
 
-            fname = "{}---{}_aa-damage".format(comm, genome)
-            outfile = Path(outdir, fname).with_suffix(out_suffix)
+            fname = f"{comm}---{genome}_aa-damage{out_suffix}"
+            outfile = Path(outdir, fname)
             columns = [
                 "community",
                 "read_name",
