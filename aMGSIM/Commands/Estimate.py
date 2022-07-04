@@ -246,6 +246,11 @@ def estimate(args):
         acc2taxid=config["acc2taxid"],
         nprocs=config["cpus"],
     )
+    # get list of keys for taxonomy
+    taxonomy_keys = list(taxonomy_info.keys())
+
+    # filter table to contain taxonomy keys as reference
+    filterBAM_stats = filterBAM_stats[filterBAM_stats["reference"].isin(taxonomy_keys)]
 
     filterBAM_stats["taxid"] = filterBAM_stats["reference"].apply(
         lambda x: taxonomy_info[x]["taxid"]
@@ -296,15 +301,20 @@ def estimate(args):
     )
 
     # Select genomes that are not damaged based on the config
-    log.info("Selecting genomes that are not damaged")
-    non_damaged_genomes = w.select_taxa(
-        rank_abundance,
-        is_damaged=False,
-        mode=config["max-genomes-nondamaged-selection"],
-        n_taxa=config["max-genomes-nondamaged"],
-        tax_rank=taxonomic_rank,
-        stats=filterBAM_stats,
-    )
+    if config["max-genomes-nondamaged"] > 0:
+        log.info("Selecting genomes that are not damaged")
+        non_damaged_genomes = w.select_taxa(
+            rank_abundance,
+            is_damaged=False,
+            mode=config["max-genomes-nondamaged-selection"],
+            n_taxa=config["max-genomes-nondamaged"],
+            tax_rank=taxonomic_rank,
+            stats=filterBAM_stats,
+        )
+    else:
+        log.info("Skipping selection of genomes that are not damaged")
+        non_damaged_genomes = pd.DataFrame()
+
     log.info("Selecting genomes that are damaged")
     damaged_genomes = w.select_taxa(
         rank_abundance,
@@ -315,7 +325,13 @@ def estimate(args):
         stats=filterBAM_stats,
     )
 
-    log.info("Re-estimating proportions...")
+    # Check that both tables have entries, if not exit
+    if (non_damaged_genomes.shape[0] == 0) and (damaged_genomes.shape[0] == 0):
+        log.error("No genomes found")
+        sys.exit(1)
+
+    # merge tables
+    log.info("Combining tables and re-estimating proportions...")
     if non_damaged_genomes.shape[0] > 0:
         genomes = f.concat_df([damaged_genomes, non_damaged_genomes])
     else:

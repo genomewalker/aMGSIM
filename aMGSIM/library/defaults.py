@@ -250,7 +250,7 @@ w_schema_config = {
     ),
     Optional("max-genomes-nondamaged", default=10): Or(
         None,
-        And(Use(int), lambda max_genomes_nondamaged: max_genomes_nondamaged > 0),
+        And(Use(int), lambda max_genomes_nondamaged: max_genomes_nondamaged >= 0),
         error="The number of non-damaged genomes selected should be greater than 0",
     ),
     Optional("max-genomes-damaged", default=10): Or(
