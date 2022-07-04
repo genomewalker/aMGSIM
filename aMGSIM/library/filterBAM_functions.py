@@ -220,11 +220,15 @@ def filter_filterBAM_taxa(df, filter_conditions):
 def get_tax(ref, parms):
     taxdb = parms["taxdb"]
     acc2taxid = parms["acc2taxid"]
-    taxid = acc2taxid[ref]
-    # taxid = txp.taxid_from_name(ref, taxdb)[0]
-    taxonomy_info = txp.Taxon(taxid, taxdb).rank_name_dictionary
-    taxonomy_info["taxid"] = taxid
-    taxonomy_info["ref"] = ref
+    if ref in acc2taxid:
+        taxid = acc2taxid[ref]
+        # taxid = txp.taxid_from_name(ref, taxdb)[0]
+        taxonomy_info = txp.Taxon(taxid, taxdb).rank_name_dictionary
+        taxonomy_info["taxid"] = taxid
+        taxonomy_info["ref"] = ref
+    else:
+        logging.debug(f"No taxid found for {ref}")
+        taxonomy_info = None
     return taxonomy_info
 
 
@@ -266,6 +270,7 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
         )
         p.close()
         p.join()
+    taxonomy_info = list(filter(None, taxonomy_info))
     exclude = ["taxid", "ref"]
     tax_ranks = []
 
