@@ -137,6 +137,8 @@ def obj_dict(obj):
 
 # Read files and get coordinates
 
+log = logging.getLogger("my_logger")
+
 
 def do_proteins_analysis(args):
     global debug
@@ -144,6 +146,10 @@ def do_proteins_analysis(args):
         debug = True
     else:
         debug = False
+
+    logging.getLogger("my_logger").setLevel(
+        logging.DEBUG if args.debug else logging.INFO
+    )
 
     sys.excepthook = exceptionHandler
 
@@ -177,7 +183,7 @@ def do_proteins_analysis(args):
     if p_procs > len(genome_files):
         p_procs = len(genome_files)
 
-    logging.info("Predicting genes from genomes using {} processes...".format(p_procs))
+    log.info("Predicting genes from genomes using {} processes...".format(p_procs))
     output_dir = os.path.join(tmp_dir, "gene_prediction")
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
@@ -212,7 +218,7 @@ def do_proteins_analysis(args):
         nproc=ncpu,
     )
 
-    logging.info("Finding damage in codons...")
+    log.info("Finding damage in codons...")
     comm_files = list(product(comms, genome_ids))
 
     # if p_procs > len(comm_files):
@@ -231,7 +237,7 @@ def do_proteins_analysis(args):
                 desc=f"Files processed",
             )
         )
-    logging.info("Combining files...")
+    log.info("Combining files...")
 
     p_procs = nproc * ncpu
     if p_procs > len(comms):
@@ -271,4 +277,4 @@ def do_proteins_analysis(args):
     #         compression="gzip",
     #     )
 
-    logging.info("Protein analysis done.")
+    log.info("Protein analysis done.")

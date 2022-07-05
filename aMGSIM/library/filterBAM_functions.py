@@ -11,6 +11,8 @@ from aMGSIM.library import functions as f
 from aMGSIM.library import cli as c
 
 
+log = logging.getLogger("my_logger")
+
 # From https://stackoverflow.com/a/59737793/15704171
 def largestRemainderMethod(pd_series, decimals=1):
 
@@ -227,7 +229,7 @@ def get_tax(ref, parms):
         taxonomy_info["taxid"] = taxid
         taxonomy_info["ref"] = ref
     else:
-        logging.debug(f"No taxid found for {ref}")
+        log.debug(f"No taxid found for {ref}")
         taxonomy_info = None
     return taxonomy_info
 
@@ -251,6 +253,7 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
     acc2taxid_dict = acc2taxid_df.set_index("reference").T.to_dict("records")
 
     debug = c.is_debug()
+    logging.getLogger("my_logger").setLevel(logging.DEBUG if debug else logging.INFO)
 
     parms = {"taxdb": taxdb, "acc2taxid": acc2taxid_dict[0]}
     func = partial(get_tax, parms=parms)
@@ -291,15 +294,15 @@ def check_if_genomes_left(df):
 def check_if_nrows_is_smaller_than_ntaxa(df, n_taxa):
     if n_taxa > df.shape[0] and df.shape[0] > 0:
         n_taxa = len(df)
-        logging.info(f"::: The number of taxa is too high. Setting to {n_taxa}")
+        log.info(f"::: The number of taxa is too high. Setting to {n_taxa}")
     return n_taxa
 
 
 def get_missing_genomes(df, stats_df, n_taxa, n_taxa_first, tax_rank):
-    logging.info(
+    log.info(
         f"::: We tried to get {n_taxa:,} genomes at {tax_rank} level but only found {n_taxa_first:,}."
     )
-    logging.info(f"::: Resampling the genome table.")
+    log.info(f"::: Resampling the genome table.")
     # we will sample the table with genomes to get as closer as we can
     # while mainting a diverse set of genomes
     # get an initial set of genomes as big as we can
@@ -308,7 +311,7 @@ def get_missing_genomes(df, stats_df, n_taxa, n_taxa_first, tax_rank):
     if n_taxa_left <= stats_df.shape[0]:
         df2 = stats_df.sample(n=n_taxa_left)
     else:
-        logging.info(
+        log.info(
             f"::: Unfortunately there are not enough genomes, selecting {stats_df.shape[0]:,} genomes left."
         )
         df2 = stats_df
@@ -336,7 +339,7 @@ def select_taxa(
     """
     n_taxa_first = 0
     if mode == "most_abundant":
-        logging.info(f"::: Selecting most abundant taxa")
+        log.info(f"::: Selecting most abundant taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
@@ -374,7 +377,7 @@ def select_taxa(
             )
 
     elif mode == "least_abundant":
-        logging.info(f"::: Selecting least abundant taxa")
+        log.info(f"::: Selecting least abundant taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
@@ -411,7 +414,7 @@ def select_taxa(
                 tax_rank=tax_rank,
             )
     elif mode == "random":
-        logging.info("::: Selecting random taxa")
+        log.info("::: Selecting random taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)

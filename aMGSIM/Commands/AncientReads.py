@@ -937,7 +937,10 @@ def get_ancient_reads(args):
         debug = True
     else:
         debug = False
-    log.setLevel(logging.DEBUG if debug else logging.INFO)
+
+    logging.getLogger("my_logger").setLevel(
+        logging.DEBUG if args.debug else logging.INFO
+    )
 
     # sys.excepthook = exceptionHandler
 

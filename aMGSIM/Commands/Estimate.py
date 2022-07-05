@@ -51,7 +51,6 @@ def generate_genome_compositions(df, sample_name):
     Returns:
         pandas.DataFrame: A table with the genome information.
     """
-
     df_selected = df[
         [
             "Taxon",
@@ -221,7 +220,10 @@ def estimate(args):
         debug = True
     else:
         debug = False
-    log.setLevel(logging.DEBUG if debug else logging.INFO)
+
+    logging.getLogger("my_logger").setLevel(
+        logging.DEBUG if args.debug else logging.INFO
+    )
 
     sys.excepthook = exceptionHandler
     # simulating reads
@@ -274,7 +276,6 @@ def estimate(args):
         filter_conditions=config["mdmg-filter-conditions"],
         taxonomic_rank=taxonomic_rank,
     )
-
     # damaged_taxa["taxrank"] = damaged_taxa["reference"].apply(
     #     lambda x: taxonomy_info[x][taxonomic_rank]
     # )
@@ -324,7 +325,6 @@ def estimate(args):
         tax_rank=taxonomic_rank,
         stats=filterBAM_stats,
     )
-
     # Check that both tables have entries, if not exit
     if (non_damaged_genomes.shape[0] == 0) and (damaged_genomes.shape[0] == 0):
         log.error("No genomes found")
@@ -362,6 +362,24 @@ def estimate(args):
         df=genomes,
         sample_name=config["sample-name"],
     )
+    genome_compositions["reference"] = genome_compositions["Taxon"].str.split(
+        "----", expand=True
+    )[1]
+
+    if "Bayesian_D_max" in mdmg_results.columns:
+        genome_compositions = genome_compositions.merge(
+            mdmg_results[["reference", "Bayesian_D_max"]], on="reference"
+        )
+        # rename column Bayesian_D_max to D_max
+        genome_compositions.rename(columns={"Bayesian_D_max": "D_max"}, inplace=True)
+        # drop reference column
+    else:
+        genome_compositions = genome_compositions.merge(
+            mdmg_results[["reference", "D_max"]], on="reference"
+        )
+
+    genome_compositions.drop(columns=["reference"], inplace=True)
+
     genome_compositions.Read_length = genome_compositions.Read_length.round(0).astype(
         int
     )
