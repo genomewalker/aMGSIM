@@ -727,23 +727,28 @@ def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
         for in_file in read_files:
             if fastx == "fastq":
                 if "SR" not in os.path.split(in_file)[1]:
-                    p0 = re.compile("(\S+)---(\S+)___art-(ancient|modern).\d.fq")
+                    p0 = re.compile(
+                        "(\S+)---(\S+)----(\S+)___art-(ancient|modern).\d.fq"
+                    )
                     p1 = re.compile(
                         "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$"
                     )
                 else:
-                    p0 = re.compile("(\S+)---(\S+)___art-(ancient|modern).SR.fq")
+                    p0 = re.compile(
+                        "(\S+)---(\S+)----(\S+)___art-(ancient|modern).SR.fq"
+                    )
                     p1 = re.compile(
                         "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d$"
                     )
             elif fastx == "fasta":
-                p0 = re.compile("(\S+)---(\S+)___\S+-(\S+).fasta\S+")
+                p0 = re.compile("(\S+)---(\S+)----(\S+)___\S+-(\S+).fasta\S+")
                 p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
 
             m0 = re.match(p0, os.path.split(in_file)[1])
             comm = m0.group(1)
-            taxon = m0.group(2)
-            frag_type = m0.group(3)
+            taxon = f"{m0.group(2)}----{m0.group(3)}"
+
+            frag_type = m0.group(4)
             encoding = guess_type(in_file)[1]  # uses file extension
             _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
             with _open(in_file) as f:
