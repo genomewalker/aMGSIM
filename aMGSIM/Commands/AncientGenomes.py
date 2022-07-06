@@ -108,7 +108,10 @@ class Genome:
         # ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
         self.comm = genome["Community"]
         self.taxon = genome["Taxon"]
-        self.rel_abund = genome["Perc_rel_abund"]
+        if "Perc_rel_abund" in genome:
+            self.rel_abund = genome["Perc_rel_abund"]
+        else:
+            self.rel_abund = None
         self.genome_size = genome["Genome_size"]
         # test if key is in dictionary
 
@@ -438,6 +441,14 @@ def select_genomes(self, parms):
     # we identify which genomes should have a specific ancient content in each commmunity
     genome_comp = genome_comp.merge(self)[["Taxon", "coverage_ancient", "onlyAncient"]]
 
+    # check if we have Perc_rel_abund in self
+    if "Perc_rel_abund" in self:
+        rel_abund = True
+    else:
+        rel_abund = False
+        self["Perc_rel_abund"] = None
+        cov_anc = self["coverage_ancient"]
+
     if library == "se":
         paired = 1
     else:
@@ -445,7 +456,6 @@ def select_genomes(self, parms):
 
     # Estimate the ancient read length
     read_length_ancient = mode_len_ancient * paired
-
     # Get max and min coverage values
     min_cov = coverage["min"]
     max_cov = coverage["max"]
@@ -465,12 +475,18 @@ def select_genomes(self, parms):
             coverage_ancient = np.round(
                 np.random.uniform(min_cov, max_cov, size=self.shape[0]), 1
             )
-
-            self["seq_depth"] = n_reads * (self["Perc_rel_abund"] / 100)
-            self["seq_depth"] = self["seq_depth"].astype(int)
-            self["max_ancient_cov_allowed"] = (
-                self["seq_depth"] * read_length_ancient
-            ) / self["Genome_size"]
+            if rel_abund:
+                self["seq_depth"] = n_reads * (self["Perc_rel_abund"] / 100)
+                self["seq_depth"] = self["seq_depth"].astype(int)
+                self["max_ancient_cov_allowed"] = (
+                    self["seq_depth"] * read_length_ancient
+                ) / self["Genome_size"]
+            else:
+                self["max_ancient_cov_allowed"] = cov_anc
+                self["seq_depth"] = (
+                    cov_anc * self["Genome_size"]
+                ) / read_length_ancient
+                self["seq_depth"] = self["seq_depth"].astype(int)
 
             self["coverage_ancient_rnd"] = coverage_ancient.tolist()
             self["coverage_ancient"] = 0
@@ -495,12 +511,17 @@ def select_genomes(self, parms):
         coverage_ancient = np.round(
             np.random.uniform(min_cov, max_cov, size=self.shape[0]), 1
         )
+        if rel_abund:
+            self["seq_depth"] = n_reads * (self["Perc_rel_abund"] / 100)
+            self["seq_depth"] = self["seq_depth"].astype(int)
+            self["max_ancient_cov_allowed"] = (
+                self["seq_depth"] * read_length_ancient
+            ) / self["Genome_size"]
+        else:
+            self["max_ancient_cov_allowed"] = cov_anc
+            self["seq_depth"] = (cov_anc * self["Genome_size"]) / read_length_ancient
+            self["seq_depth"] = self["seq_depth"].astype(int)
 
-        self["seq_depth"] = n_reads * (self["Perc_rel_abund"] / 100)
-        self["seq_depth"] = self["seq_depth"].astype(int)
-        self["max_ancient_cov_allowed"] = (
-            self["seq_depth"] * read_length_ancient
-        ) / self["Genome_size"]
         self["coverage_ancient_rnd"] = coverage_ancient.tolist()
         self["coverage_ancient"] = 0
         self["onlyAncient"] = self.apply(rand_isAncient, axis=1)
@@ -520,9 +541,12 @@ def select_genomes(self, parms):
     # Estimate max number of reads as function of coverage and rel abun
 
     # Number max of reads genome in sample
-    w = pd.DataFrame(withAncient["Perc_rel_abund"].apply(lambda x: np.arcsinh(100 - x)))
-    max_w = w["Perc_rel_abund"].sum()
-    w = w["Perc_rel_abund"].apply(lambda x: x / max_w)
+    if rel_abund:
+        w = pd.DataFrame(
+            withAncient["Perc_rel_abund"].apply(lambda x: np.arcsinh(100 - x))
+        )
+        max_w = w["Perc_rel_abund"].sum()
+        w = w["Perc_rel_abund"].apply(lambda x: x / max_w)
 
     if genome_comp.empty:
         random_genomes = np.random.choice(pop, replace=False, p=w, size=k)
@@ -770,7 +794,9 @@ def get_ancient_genomes(args):
     else:
         debug = False
 
-    log.setLevel(logging.DEBUG if debug else logging.INFO)
+    logging.getLogger("my_logger").setLevel(
+        logging.DEBUG if args.debug else logging.INFO
+    )
 
     # sys.excepthook = exceptionHandler
 
@@ -790,6 +816,7 @@ def get_ancient_genomes(args):
         genome_comp = False
         filename = abund_table
     elif config["genome-comp"] and not config["abund-table"]:
+        abund_table = False
         genome_comp = config["genome-comp"]
         filename = genome_comp
     else:
@@ -827,12 +854,10 @@ def get_ancient_genomes(args):
     if read_len < min_len:
         raise ValueError(f"Read length shorter than the minimum defined ({min_len})...")
 
-    # load tables
-    log.info("Loading abundace table...")
-    abund_table = SimReads.load_abund_table(abund_table)
-
-    log.info("Loading abundance genomes...")
+    log.info("Loading genome paths...")
     genome_table = f.load_genome_table(config["genome-table"], nproc)
+
+    # load tables
 
     if genome_comp:
         log.info("Loading genome composition table...")
@@ -841,25 +866,56 @@ def get_ancient_genomes(args):
     else:
         genome_comp = pd.DataFrame(columns=["Taxon", "coverage_ancient", "onlyAncient"])
 
-    df = abund_table.merge(genome_table, on=["Taxon"])
+    if abund_table:
+        log.info("Loading abundace table...")
+        abund_table = SimReads.load_abund_table(abund_table)
+        df = abund_table.merge(genome_table, on=["Taxon"])
+        if "Accession" in df.columns:
+            genomes = df[
+                [
+                    "Community",
+                    "Accession",
+                    "Taxon",
+                    "Perc_rel_abund",
+                    "Rank",
+                    "Genome_size",
+                ]
+            ].to_dict("records")
+        else:
+            genomes = df[
+                ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
+            ].to_dict("records")
+    else:
+        df = genome_comp.merge(genome_table, on=["Taxon"])
+        if "Accession" in df.columns:
+            genomes = df[
+                [
+                    "Community",
+                    "Accession",
+                    "Taxon",
+                    "coverage_ancient",
+                    "Genome_size",
+                ]
+            ].to_dict("records")
+        else:
+            genomes = df[
+                ["Community", "Taxon", "coverage_ancient", "Genome_size"]
+            ].to_dict("records")
 
     if read_length_freqs:
         log.info("Loading read length frequencies from JSON...")
         read_length_freqs = f.load_read_length_freqs(read_length_freqs)
 
-    if "Accession" in df.columns:
-        genomes = df[
-            ["Community", "Accession", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
-        ].to_dict("records")
-    else:
-        genomes = df[
-            ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
-        ].to_dict("records")
-
     # We need to add to the taxon the proportion of ancient
     # We need to take Community,
     log.info("Selecting random genomes...")
-    df_anc = df[["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]].copy()
+    if "Perc_rel_abund" in list(df.columns):
+        df_anc = df[
+            ["Community", "Taxon", "Perc_rel_abund", "Rank", "Genome_size"]
+        ].copy()
+    else:
+        df_anc = df[["Community", "Taxon", "coverage_ancient", "Genome_size"]].copy()
+
     # df_anc['Perc_rel_abund'] = df_anc.groupby('Community')['Perc_rel_abund'].transform(round_to_100_percent)
     grouped = df_anc.groupby("Community")
 
@@ -895,6 +951,21 @@ def get_ancient_genomes(args):
             f"::: Using read lengths with modes [{mode_len_ancient}/{mode_len_modern}]"
         )
 
+    # If there's not abundace table lets recalcultae them using the selected genomes
+    if not "Perc_rel_abund" in list(df.columns):
+        log.info("Calculating abundace table...")
+        selected_genomes["Perc_rel_abund"] = 100 * (
+            selected_genomes["seq_depth"]
+            / selected_genomes.groupby("Community")["seq_depth"].transform("sum")
+        )
+        for genome in genomes:
+            # extract value from dataframe where taxon and community match
+            rel_abun = selected_genomes[
+                (selected_genomes["Community"] == genome["Community"])
+                & (selected_genomes["Taxon"] == genome["Taxon"])
+            ]["Perc_rel_abund"].values[0]
+            genome.update({"Perc_rel_abund": rel_abun})
+
     func = partial(
         process_genome,
         dist=dist,
@@ -910,7 +981,6 @@ def get_ancient_genomes(args):
         n_reads=n_reads,
         genome_comp=genome_comp,
     )
-
     if debug is True:
         ancient_genomes_data = list(map(func, genomes))
     else:
@@ -927,7 +997,12 @@ def get_ancient_genomes(args):
         p.close()
         p.join()
         # ancient_genomes_data = p.map(func, genomes)
-    file_name = Path(filename.name).stem
+    if "Perc_rel_abund" in list(df.columns):
+        file_name = Path(filename.name).stem
+    else:
+        file_name = Path(
+            filename.name.replace("genome-compositions", "communities")
+        ).stem
     dir_name = Path(filename.name).parent
 
     log.info("Refinning read abundances...")
@@ -949,7 +1024,7 @@ def get_ancient_genomes(args):
     #
     suffix_tsv = ".tsv"
     out_file_tsv = Path(dir_name, f"{file_name}_read-abundances{suffix_tsv}")
-    
+
     df_tsv.to_csv(path_or_buf=out_file_tsv, sep="\t", header=True, index=False)
 
     ancient_genomes_json = json.dumps(

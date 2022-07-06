@@ -391,7 +391,10 @@ def check_filter_conditions(filt_dict, default_filter_values, filters):
     """
     # remove keys if they are not in the filter dictionary
     filt_dict = {k: filt_dict[k] for k in filters if k in filt_dict}
-    filt_dict = {**default_filter_values, **filt_dict}
+    # check if the filter values are correct
+    # if filter is empty, use default values
+    if not filt_dict:
+        filt_dict = {**default_filter_values, **filt_dict}
     if all(value >= 0 for value in filt_dict.values()):
         return filt_dict
     else:
