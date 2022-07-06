@@ -9,7 +9,7 @@ import tqdm
 from functools import partial
 from aMGSIM.library import functions as f
 from aMGSIM.library import cli as c
-
+import sys
 
 log = logging.getLogger("my_logger")
 
