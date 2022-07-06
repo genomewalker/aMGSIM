@@ -8,11 +8,24 @@ from aMGSIM import __version__
 import shutil
 
 
+class SplitArgs(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        try:
+            values = list(map(float, values.split(",")))
+        except ValueError:
+            raise argparse.ArgumentError(self, "invalid values: %r" % values)
+        # check all elements in list are greater than 0
+        if not all(x > 0 for x in values):
+            raise argparse.ArgumentError(self, "all elements must be greater than 0")
+        setattr(namespace, self.dest, values)
+
+
 def is_debug():
     return logging.getLogger("my_logger").getEffectiveLevel() == logging.DEBUG
 
 
 filters = ["breadth", "depth", "depth_evenness", "breadth_expected_ratio"]
+
 
 # From https://stackoverflow.com/a/59617044/15704171
 def convert_list_to_str(lst):
@@ -120,7 +133,7 @@ def create_folder_and_delete(path):
     if not os.path.exists(path):
         os.makedirs(path)
     else:
-        logging.info(f"Folder {path} already exists. Deleting.")
+        log.info(f"Folder {path} already exists. Deleting.")
         try:
             shutil.rmtree(path)
             os.makedirs(path)
@@ -130,13 +143,13 @@ def create_folder_and_delete(path):
 
 def delete_folder(path):
     if os.path.exists(path):
-        logging.info(f"Deleting folder {path}.")
+        log.info(f"Deleting folder {path}.")
         try:
             shutil.rmtree(path)
         except OSError as e:
             print("Error: %s : %s" % (path, e.strerror))
     else:
-        logging.info(f"Path {path} does not exist.")
+        log.info(f"Path {path} does not exist.")
 
 
 def create_folder(path):
@@ -146,7 +159,7 @@ def create_folder(path):
         except OSError as e:
             print("Error: %s : %s" % (path, e.strerror))
     else:
-        logging.info(f"Folder {path} already exists. Skipping creation.")
+        log.info(f"Folder {path} already exists. Skipping creation.")
 
 
 defaults = {
@@ -155,21 +168,28 @@ defaults = {
     "gene_min_length": 30,
     "tmp": ".tmp",
     "output": "protein-analysis",
+    "cov_suffix": "multicov",
+    "coverages": [0.1, 0.5, 1, 5, 10, 20, 50, 100],
 }
 
 help_msg = {
     "config": "Config file ",
     "genome_table": "A TSV file containing the columns Taxon and Fasta",
     "abund_read_file": "A JSON file containing the abundance of reads",
+    "genome_compositions": "A TSV file containing the genome compositions",
     "processes": "Number of processes to use",
     "threads": "Number of threads to use in each process",
     "output": "Output folder",
+    "cov_suffix": "Suffix added to the filename for the multi coverage file",
+    "coverages": "Coverage values for the multi coverage",
     "tmp": "Temporary folder",
     "gene_min_length": "Minimum gene length predicts by Prodigal",
     "help": "Help message",
     "debug": f"Print debug messages",
     "version": f"Print program version",
 }
+
+log = logging.getLogger("my_logger")
 
 
 def get_arguments(argv=None):
@@ -209,6 +229,12 @@ def get_arguments(argv=None):
         parents=[parent_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser_multicov = sub_parsers.add_parser(
+        "multicov",
+        help="Create different coverage versions of a genome compositions file",
+        parents=[parent_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser_ag = sub_parsers.add_parser(
         "ancient-genomes",
         help="Estimate coverage, depth and other properties for each genome in each synthetic community",
@@ -233,6 +259,29 @@ def get_arguments(argv=None):
         "config",
         type=lambda x: is_valid_file(parser, x, "config"),
         help=help_msg["config"],
+    )
+
+    cov_required_args = parser_multicov.add_argument_group("required arguments")
+    cov_optional_args = parser_multicov.add_argument_group("optional arguments")
+    cov_required_args.add_argument(
+        "genome_compositions",
+        type=lambda x: is_valid_file(parser, x, "genome_compositions"),
+        help=help_msg["genome_compositions"],
+    )
+    cov_optional_args.add_argument(
+        "--suffix",
+        type=str,
+        default=defaults["cov_suffix"],
+        metavar="STR",
+        dest="cov_suffix",
+        help=help_msg["cov_suffix"],
+    )
+    cov_optional_args.add_argument(
+        "--coverages",
+        default=defaults["coverages"],
+        dest="coverages",
+        action=SplitArgs,
+        help=help_msg["coverages"],
     )
 
     ag_required_args = parser_ag.add_argument_group("required arguments")
@@ -311,5 +360,4 @@ def get_arguments(argv=None):
     if args.action is not None and len(sys.argv) == 2:
         if args.action != "communities":
             args = parser.parse_args([args.action, "-h"])
-
     return args
