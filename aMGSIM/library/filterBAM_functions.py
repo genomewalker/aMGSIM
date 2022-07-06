@@ -287,8 +287,8 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
 
 def check_if_genomes_left(df):
     if df.shape[0] == 0:
-        logging.error(f"::: No damaged genomes found. Exiting.")
-        exit(0)
+        log.error(f"::: No damaged genomes found. Exiting.")
+        sys.exit(1)
 
 
 def check_if_nrows_is_smaller_than_ntaxa(df, n_taxa):

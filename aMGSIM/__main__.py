@@ -17,6 +17,7 @@ from aMGSIM.Commands.Estimate import estimate
 from aMGSIM.Commands.AncientGenomes import get_ancient_genomes
 from aMGSIM.Commands.AncientReads import get_ancient_reads
 from aMGSIM.Commands.ProteinAnalysis import do_proteins_analysis
+from aMGSIM.Commands.MultiCov import generate_multi_cov
 
 from aMGSIM import __version__
 from aMGSIM.library.cli import get_arguments
@@ -43,6 +44,8 @@ def main():
         )
         if args.action == "estimate":
             estimate(args)
+        elif args.action == "multicov":
+            generate_multi_cov(args)
         elif args.action == "ancient-genomes":
             get_ancient_genomes(args)
         elif args.action == "ancient-reads":

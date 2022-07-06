@@ -379,6 +379,9 @@ def get_seqs_inframe(x):
     return x
 
 
+log = logging.getLogger("my_logger")
+
+
 def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
     pandarallel.initialize(nb_workers=nproc, progress_bar=False, verbose=False)
 
@@ -406,20 +409,20 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
             recs = get_headers(records=records, pattern=pattern)
             df = pd.DataFrame(recs)
         if debug:
-            logging.info("Reading reads...")
+            log.info("Reading reads...")
 
         # Get reads
         df_reads = pr.PyRanges(df)
 
         if df_reads.df["Chromosome"].str.contains(genome).any():
             if debug:
-                logging.info("Reading genes...")
+                log.info("Reading genes...")
             # Get genes info
             genes = get_gene_coordinates(fna=fna)
             # Get intersections
             # Will rop intersects that are too short for coding AAs
             if debug:
-                logging.info("Finding read-gene intersections...")
+                log.info("Finding read-gene intersections...")
 
             r2g_intersections = get_intersections(
                 reads=df_reads, genes=genes, genome=fasta_file, min_len=min_len
@@ -445,13 +448,13 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
             ].sort_values("Name")
             # len(read_multi_span.index)
             if debug:
-                logging.info("Retrieving non-damaged sequences from intersections...")
+                log.info("Retrieving non-damaged sequences from intersections...")
             # Get sequence from interval
             r2g_intersections.nondamaged_seq = get_nondamaged_seqs(
                 intersections=r2g_intersections, genome=fasta_file
             )
             if debug:
-                logging.info("Retrieving damaged sequences from intersections...")
+                log.info("Retrieving damaged sequences from intersections...")
             r2g_intersections = get_damaged_seqs(
                 intersections=r2g_intersections, deam_file=deam_file
             )
@@ -460,7 +463,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
                 find_damage, axis=1
             )
             if debug:
-                logging.info("Retrieving damaged codons from genes...")
+                log.info("Retrieving damaged codons from genes...")
             aa_damage = r2g_intersections.df.merge(
                 fasta_to_dataframe(fna)[["name", "sequence"]].rename(
                     columns={"name": "gene_name"}
