@@ -432,7 +432,7 @@ def generate_fragments(
     genome_data = genome_table[(genome_table["Taxon"] == x["taxon"])]
     fasta = genome_data["Fasta_normalized"].item()
     # Create index
-    fasta_seq = pyfaidx.Faidx(fasta)
+    # fasta_seq = pyfaidx.Faidx(fasta)
     read_len = exp_data["read_length"]
     library = exp_data["library"]
     seqSys = exp_data["seqSys"]
@@ -990,14 +990,23 @@ def get_ancient_reads(args):
         genome_table=genome_table, output_dir=output_dir, cpus=config_params["cpus"]
     )
 
-    log.info("Simulating reads by sample...")
+    log.info("Indexing genomes...")
     with open(fragSim_params["ancient-genomes"], "r") as json_file:
         filename = json_file
         ancient_genomes = json.load(json_file)
     ancient_genomes_data = ancient_genomes["data"]
     ancient_genomes_exp = ancient_genomes["experiment"]
     # fragSim_params.pop('ancient_genomes', None)
+    genome_lst = []
+    for x in ancient_genomes_data:
+        if not x["taxon"] in genome_lst:
+            genome_lst.append(x["taxon"])
+            genome_data = genome_table[(genome_table["Taxon"] == x["taxon"])]
+            fasta = genome_data["Fasta_normalized"].item()
+            # Create index
+            fasta_seq = pyfaidx.Faidx(fasta)
 
+    log.info("Simulating reads by sample...")
     func = partial(
         generate_fragments,
         fragSim_exe=config_params["fragSim"],
