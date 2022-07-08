@@ -61,6 +61,7 @@ def generate_multi_cov(args):
             row_tmp = row.copy(deep=True)
 
     # concatenate all the dataframes
+    genome_comp["Community"] = genome_comp["Community"] + "___raw"
     genome_comp = pd.concat([genome_comp, pd.DataFrame(dfs)])
     log.info(f"Saving new genome composition table to {file_name}")
     genome_comp.sort_values(["Community", "Taxon"]).to_csv(
