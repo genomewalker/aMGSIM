@@ -5,7 +5,9 @@
 
 aMGSIM is an extension of [MGSIM](https://github.com/nick-youngblut/MGSIM/) to create simulated ancient metagenome reads in multiple microbial synthetic communities. It integrates the methods in [Gargammel](https://github.com/grenaud/gargammel) and provides flexibility to create different experimental scenarios. Furthermore, aMGSIM also can track damage over the codons of the predicted proteins from the microbial genomes. 
 
+aMGSIM can produce random metagenomes (A) or it can estimate the parameters from a real sample (B) using [bam-filter](https://github.com/genomewalker/bam-filter) and [metaDMG](https://metadmg-dev.github.io/metaDMG-core/)
 
+<img src='extra/aMGSIM-wf.png' width='100%'>
 
 ## INSTALLATION
 
