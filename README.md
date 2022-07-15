@@ -138,6 +138,8 @@ This will create all the files need for the next step:
 - **0e59dd2155.genome-compositions.tsv**: This file is the one controlling how the genomes are going to be processed and will contain the empirical values. We can change them to spike certain taxa to very high or very low coverage values. Anything added to this file (all genomes by default) will avoid the random generation of coverage, sequencing depth and other vlaues. Columns are `Taxon`, `Community`, `Coverage` and `onlyAncient`
   
 
+### communities
+
 If you want to use the `communities` subcommand:
 
 ```
@@ -155,6 +157,9 @@ The subcommand `communities` will generate three synthetic communities. From the
 - **_example_\_abund.txt**: taxon relative abundances for each community this is the relative number of genome copies for each taxon
 - **_example_\__wAbund.txt**: taxon relative abundances weighted by genome size this is the fraction of the DNA pool for each taxon
 - **_example_\__beta-div.txt**: beta diversity among communities see the beta-div parameter for selecting beta-diversity measures
+
+
+### ancient-genomes
 
 When these files are in place we can call the second command that will generate the synthetic community. This command will use the config file `ag-config.yaml` will set the basic parameters to generate the fragment needed for the simulations. Here is where you need to decide if we use paired/single end, which machine, read length, modal length of the damaged/non-damaged fraction and the libprep method. We will use the subcommand `ancient-genomes`:
 
@@ -290,6 +295,8 @@ The output of this subcommand will produce a TSV file (_PREFIX_`_read-abundances
 }
 ```
 
+### multicov
+
 In case we would like to generate the necessary files to have defined coverage values for each genome in the compositions file we can use the subcommand `multicov`:
 
 ```
@@ -316,6 +323,8 @@ aMGSIM multicov --coverage 0.1,1,10,100 0e59dd2155.genome-compositions.tsv
 ```
 
 The command will generate all the files that can be used by ancient-reads as well.
+
+### ancient-reads
 
 The subcommand `ancient-reads` is the one creating all the fasta and fastq files with the reads for the genomes in each community:
 
@@ -367,7 +376,11 @@ It takes as input the file with the [genome information](examples/data/genome_li
 - **art**: One can specify custom error models in case they are not included in [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm)
 
 
-The ouput of `ancient-reads` are the read files for each community after each step (fragSim -> deamSim -> adptSim -> ART) and a JSON file with the location of each file. This JSON file can be used for the last subcommand in aMGSIM, `protein-analysis`:
+The ouput of `ancient-reads` are the read files for each community after each step (fragSim -> deamSim -> adptSim -> ART) and a JSON file with the location of each file. This JSON file can be used for the last subcommand in aMGSIM, `protein-analysis`.
+
+### protein-analysis
+
+This subcommand will predict the genes in the genome with [Prodigal](https://github.com/hyattpd/Prodigal) and will match the reads and damages to the codon positions in the predicted genes. Depending the number of reads simulated it can take some time to produce all the results.
 
 ```
 protein-analysis: Tracking damage to the codon positions of each simulated read
@@ -406,7 +419,7 @@ Description:
   * A TSV file with the damage information at the codon level
 ```
 
-This subcommand will predict the genes in the genome with [Prodigal](https://github.com/hyattpd/Prodigal) and will match the reads and damages to the codon positions in the predicted genes. Depending the number of reads simulated it can take some time to produce all the results. One can run the subcommand like this:
+One can run the subcommand like this:
 
 ```
 aMGSIM protein-analysis --cpus 3 --procs 16 example_abund_read-files.json
