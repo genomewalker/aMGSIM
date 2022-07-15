@@ -87,6 +87,7 @@ To use the empirical data from filterBAM and metaDMG, you will need the followin
 - The metaDMG CSV ouput for the sample and the misincorporation file.
 - The taxonomy dump files (names and nodes) used for filterBAM and metaDMG.
 
+### estimate
 
 Then you can use the command as follows:
 
