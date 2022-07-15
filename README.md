@@ -80,6 +80,8 @@ We have three different approaches to generate the synthetic communities:
 
 > We recommend to use the estimate subcommand to generate the synthetic communities.
 
+### estimate
+
 To use the empirical data from filterBAM and metaDMG, you will need the following files:
 
 - A file containing the paths to the genomes used for mapping the reads. A TSV file with the `name` and `location of the genomes` fasta files like the file [genome-paths-list.tsv](examples/data/genome-paths-list.tsv) 
@@ -87,7 +89,6 @@ To use the empirical data from filterBAM and metaDMG, you will need the followin
 - The metaDMG CSV ouput for the sample and the misincorporation file.
 - The taxonomy dump files (names and nodes) used for filterBAM and metaDMG.
 
-### estimate
 
 Then you can use the command as follows:
 
