@@ -312,6 +312,7 @@ def estimate(args):
             tax_rank=taxonomic_rank,
             stats=filterBAM_stats,
         )
+        non_damaged_genomes["is_damaged"] = None
     else:
         log.info("Skipping selection of genomes that are not damaged")
         non_damaged_genomes = pd.DataFrame()
