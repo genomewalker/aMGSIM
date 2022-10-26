@@ -373,6 +373,12 @@ def estimate(args):
         )
         # drop reference column
     else:
+        # rename column Bayesian_D_max to D_max
+        genome_compositions.rename(columns={"MAP_damage": "damage"}, inplace=True)
+        genome_compositions.rename(
+            columns={"MAP_significance": "significance"}, inplace=True
+        )
+
         genome_compositions = genome_compositions.merge(
             mdmg_results[["reference", "damage"]], on="reference"
         )
