@@ -47,7 +47,7 @@ IUPACAmbiguousDNA = {
     "N",
 }
 
-default_filter_values_mdmg = {"D_max": 0.1, "phi": 500, "q": 0.25}
+default_filter_values_mdmg = {"damage": 0.1, "significance": 2}
 default_filter_values_filterBAM = {"breadth_exp_ratio": 0.5, "coverage_mean": 0.1}
 tax_ranks = [
     "superkingdom",

@@ -11,7 +11,7 @@ filterBAM-filter-conditions: { "breadth_exp_ratio": 0.75, "coverage_mean": 0 }
 use-restimated-proportions: True
 # Table with specific genome's ancient properties
 mdmg-results: 8bf92435d8.tp-mdmg.local.weight-1.csv.gz
-mdmg-filter-conditions: { "Bayesian_D_max": 0.1, "Bayesian_z": 2.5 }
+mdmg-filter-conditions: { "damage": 0.1, "significance": 2 }
 taxonomic-rank: "genus"
 # Number of modern genomes
 max-genomes-nondamaged: 10

@@ -367,16 +367,14 @@ def estimate(args):
         "----", expand=True
     )[1]
 
-    if "Bayesian_D_max" in mdmg_results.columns:
+    if "damage" in mdmg_results.columns:
         genome_compositions = genome_compositions.merge(
-            mdmg_results[["reference", "Bayesian_D_max"]], on="reference"
+            mdmg_results[["reference", "damage"]], on="reference"
         )
-        # rename column Bayesian_D_max to D_max
-        genome_compositions.rename(columns={"Bayesian_D_max": "D_max"}, inplace=True)
         # drop reference column
     else:
         genome_compositions = genome_compositions.merge(
-            mdmg_results[["reference", "D_max"]], on="reference"
+            mdmg_results[["reference", "damage"]], on="reference"
         )
 
     genome_compositions.drop(columns=["reference"], inplace=True)
