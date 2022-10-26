@@ -528,6 +528,10 @@ mdmg_filters = [
     "Bayesian_phi",
     "Bayesian_phi_std",
     "Bayesian_rho_Ac",
+    "damage",
+    "MAP_damage",
+    "significance",
+    "MAP_significance",
 ]
 
 fb_filters = [
