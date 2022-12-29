@@ -376,6 +376,11 @@ def get_open_func(filename):
         return open
 
 
+def load_ranks(rank_filter):
+    rank_filter = json.loads(rank_filter)
+    return rank_filter
+
+
 def check_filter_conditions(filt_dict, default_filter_values, filters):
     """A function that checks if a filter condition is valid.
 
