@@ -449,6 +449,8 @@ seqSys_props = {
 }
 
 mdmg_filters = [
+    "tax_id",
+    "sample",
     "N_reads",
     "lambda_LR",
     "D_max",
@@ -528,6 +530,7 @@ mdmg_filters = [
     "Bayesian_phi",
     "Bayesian_phi_std",
     "Bayesian_rho_Ac",
+    "Bayesian_significance",
     "damage",
     "MAP_damage",
     "significance",
@@ -535,6 +538,7 @@ mdmg_filters = [
 ]
 
 fb_filters = [
+    "reference",
     "n_reads",
     "n_alns",
     "read_length_mean",
@@ -550,19 +554,30 @@ fb_filters = [
     "edit_distances",
     "read_ani_mean",
     "read_ani_std",
-    "reads_ani_median",
+    "read_ani_median",
     "bases_covered",
     "max_covered_bases",
     "mean_covered_bases",
     "coverage_mean",
+    "coverage_mean_trunc",
+    "coverage_mean_trunc_len",
     "coverage_covered_mean",
     "reference_length",
     "bam_reference_length",
     "breadth",
     "exp_breadth",
     "breadth_exp_ratio",
+    "n_bins",
+    "site_density",
+    "entropy",
+    "norm_entropy",
+    "gini",
+    "norm_gini",
     "c_v",
+    "d_i",
     "cov_evenness",
     "tax_abund_read",
     "tax_abund_aln",
+    "tax_abund_tad",
+    "n_reads_tad",
 ]
