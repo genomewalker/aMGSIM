@@ -377,7 +377,22 @@ def get_open_func(filename):
 
 
 def load_ranks(rank_filter):
-    rank_filter = json.loads(rank_filter)
+    """A function that loads the rank filter.
+
+    Args:
+        rank_filter (str): A string with the rank filter.
+
+    Raises:
+        SchemaError: If the filter is not correct
+
+    Returns:
+        dict: A dictionary with the filter conditions.
+    """
+    print(rank_filter)
+    if rank_filter is None:
+        rank_filter = {}
+    else:
+        rank_filter = json.loads(rank_filter)
     return rank_filter
 
 
