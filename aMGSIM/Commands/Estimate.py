@@ -241,7 +241,7 @@ def estimate(args):
         nprocs=config["cpus"],
     )
     print(taxonomy_info)
-    print(taxonomy_ranks)
+    print(tax_ranks)
     exit()
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
