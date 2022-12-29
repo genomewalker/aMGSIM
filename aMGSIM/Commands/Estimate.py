@@ -260,9 +260,6 @@ def estimate(args):
             df=taxonomy_info_df, rank_filters=rank_filters
         )
         taxonomy_info = {r: taxonomy_info[r] for r in taxonomy_ranks}
-    
-    print(taxonomy_info)
-    exit()
 
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
