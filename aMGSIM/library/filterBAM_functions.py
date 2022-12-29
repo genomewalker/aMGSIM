@@ -465,6 +465,7 @@ def filter_taxonomy_ranks(df, rank_filters):
     if rank_filters is None:
         return df
     else:
-        for key, values in rank_filters:
-            df = df[df[key].isin(values)]
+        for key in rank_filters.keys():
+            print(key)
+            df = df[df[key].isin(rank_filters[key])]
         return df
