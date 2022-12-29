@@ -226,9 +226,9 @@ def get_tax(ref, parms):
         taxid = acc2taxid[ref]
         # taxid = txp.taxid_from_name(ref, taxdb)[0]
         taxonomy_info = txp.Taxon(taxid, taxdb).rank_name_dictionary
-        print(taxonomy_info)
         taxonomy_info["taxid"] = taxid
         taxonomy_info["ref"] = ref
+        taxonomy_info["subspecies"] = f"S__{ref}"
     else:
         log.debug(f"No taxid found for {ref}")
         taxonomy_info = None
