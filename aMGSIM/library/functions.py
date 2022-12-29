@@ -390,7 +390,7 @@ def load_ranks(rank_filter):
     """
     # check if it is a dictionary
     if isinstance(rank_filter, dict) or rank_filter is None:
-        return rank_filter
+        return dict(rank_filter)
     else:
         raise SchemaError()
 
