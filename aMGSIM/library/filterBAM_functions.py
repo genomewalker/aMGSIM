@@ -226,6 +226,7 @@ def get_tax(ref, parms):
         taxid = acc2taxid[ref]
         # taxid = txp.taxid_from_name(ref, taxdb)[0]
         taxonomy_info = txp.Taxon(taxid, taxdb).rank_name_dictionary
+        print(taxonomy_info)
         taxonomy_info["taxid"] = taxid
         taxonomy_info["ref"] = ref
     else:

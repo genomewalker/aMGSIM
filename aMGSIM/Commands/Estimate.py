@@ -241,7 +241,6 @@ def estimate(args):
         acc2taxid=config["acc2taxid"],
         nprocs=config["cpus"],
     )
-    print(len(taxonomy_info.keys()))
     # Convert dictionary to dataframe
     taxonomy_info_df = pd.DataFrame.from_dict(taxonomy_info, orient="index")
     rank_filters = config["rank-filter-conditions"]
@@ -260,7 +259,6 @@ def estimate(args):
             df=taxonomy_info_df, rank_filters=rank_filters
         )
         taxonomy_info = {r: taxonomy_info[r] for r in taxonomy_ranks}
-    print(len(taxonomy_info.keys()))
 
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
