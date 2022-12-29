@@ -341,9 +341,7 @@ def _genome_size(x):
 
 def load_read_length_freqs(file):
     file = ujson.load(file)
-    print(len(file[0]))
-    exit()
-    return reduce(lambda d, src: d.update(src) or d, file[0], {})
+    return reduce(lambda d, src: d.update(src) or d, fast_flatten(file), {})
 
 
 def get_compression_type(filename):
