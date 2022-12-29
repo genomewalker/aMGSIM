@@ -388,12 +388,9 @@ def load_ranks(rank_filter):
     Returns:
         dict: A dictionary with the filter conditions.
     """
+    print(rank_filter)
     if rank_filter is None:
         rank_filter = {}
-    else:
-        rank_filter = json.loads(rank_filter)
-        print(rank_filter)
-
     return rank_filter
 
 
