@@ -462,10 +462,7 @@ def filter_taxonomy_ranks(df, rank_filters):
     Returns:
         pandas.DataFrame: [description]
     """
-    if rank_filters is None:
-        return df
-    else:
+    if rank_filters is not None:
         for key in rank_filters.keys():
-            print(key)
             df = df[df[key].isin(rank_filters[key])]
-        return df
+    return df["ref"].tolist()

@@ -244,15 +244,25 @@ def estimate(args):
 
     # Convert dictionary to dataframe
     taxonomy_info_df = pd.DataFrame.from_dict(taxonomy_info, orient="index")
-    print(taxonomy_info_df)
     rank_filters = config["rank-filter-conditions"]
     if rank_filters:
         log.info("Filtering taxonomic ranks...")
-        taxonomy_info_df = w.filter_taxonomy_ranks(
+
+        # check all keys in rank_filters are valid
+        for key in rank_filters.keys():
+            if key not in tax_ranks:
+                log.error(
+                    f"Invalid rank filter key: {key}. Valid keys are: {tax_ranks}"
+                )
+                sys.exit(1)
+
+        taxonomy_ranks = w.filter_taxonomy_ranks(
             df=taxonomy_info_df, rank_filters=rank_filters
         )
-        print(taxonomy_info_df)
-        exit()
+        taxonomy_info = {r: taxonomy_info[r] for r in taxonomy_ranks}
+    
+    print(taxonomy_info)
+    exit()
 
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
