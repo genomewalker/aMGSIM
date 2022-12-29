@@ -240,7 +240,11 @@ def estimate(args):
         acc2taxid=config["acc2taxid"],
         nprocs=config["cpus"],
     )
-    print(taxonomy_info)
+
+    # Convert dictionary to dataframe
+    taxonomy_info_df = pd.DataFrame.from_dict(taxonomy_info, orient="index")
+
+    print(taxonomy_info_df)
     print(tax_ranks)
     exit()
     # get list of keys for taxonomy
