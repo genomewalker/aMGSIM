@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 # import
 # batteries
-from docopt import docopt
 import logging
 import pandas as pd
-from functools import partial
-from multiprocessing import Pool
 import numpy as np
-import json
-from pathlib import Path
 import sys
 import re
 
@@ -16,9 +11,6 @@ import re
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f
 from aMGSIM.library import filterBAM_functions as w
-import datetime
-import tqdm
-from collections import OrderedDict
 from aMGSIM import __version__
 import taxopy as txp
 from aMGSIM.library import cli as c
