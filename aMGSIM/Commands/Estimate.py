@@ -16,6 +16,7 @@ import taxopy as txp
 from aMGSIM.library import cli as c
 import json
 
+
 def exceptionHandler(
     exception_type, exception, traceback, debug_hook=sys.__excepthook__
 ):
@@ -244,10 +245,9 @@ def estimate(args):
     # Convert dictionary to dataframe
     taxonomy_info_df = pd.DataFrame.from_dict(taxonomy_info, orient="index")
 
-    )
+    rank_filters = config["rank-filter-conditions"]
+    print(rank_filters)
 
-    print(taxonomy_info_df)
-    print(tax_ranks)
     exit()
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
