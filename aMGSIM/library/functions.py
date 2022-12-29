@@ -388,10 +388,11 @@ def load_ranks(rank_filter):
     Returns:
         dict: A dictionary with the filter conditions.
     """
-    print(rank_filter)
-    if rank_filter is None:
-        rank_filter = {}
-    return rank_filter
+    # check if it is a dictionary
+    if isinstance(rank_filter, dict) or rank_filter is None:
+        return rank_filter
+    else:
+        raise SchemaError()
 
 
 def check_filter_conditions(filt_dict, default_filter_values, filters):
