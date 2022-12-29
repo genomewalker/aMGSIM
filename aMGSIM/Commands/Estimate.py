@@ -240,6 +240,8 @@ def estimate(args):
         acc2taxid=config["acc2taxid"],
         nprocs=config["cpus"],
     )
+    print(taxonomy_info)
+    exit()
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
 

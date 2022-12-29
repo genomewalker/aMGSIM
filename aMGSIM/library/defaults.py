@@ -581,3 +581,15 @@ fb_filters = [
     "tax_abund_tad",
     "n_reads_tad",
 ]
+
+valid_ranks = {
+    "domain": "d__",
+    "kingdom": "k__",
+    "lineage": "l__",
+    "phylum": "p__",
+    "class": "c__",
+    "order": "o__",
+    "family": "f__",
+    "genus": "g__",
+    "species": "s__",
+}
