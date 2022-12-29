@@ -228,6 +228,7 @@ def get_tax(ref, parms):
         taxonomy_info = txp.Taxon(taxid, taxdb).rank_name_dictionary
         taxonomy_info["taxid"] = taxid
         taxonomy_info["ref"] = ref
+        taxonomy_info["subspecies"] = f"S__{ref}"
     else:
         log.debug(f"No taxid found for {ref}")
         taxonomy_info = None
@@ -450,3 +451,19 @@ def select_taxa(
             'mode should be one of "most_abundant", "random", "least_abundant"'
         )
     return df
+
+
+def filter_taxonomy_ranks(df, rank_filters):
+    """[summary]
+
+    Args:
+        df (pandas.DataFrame): [description]
+        rank_filters (list): [description]
+
+    Returns:
+        pandas.DataFrame: [description]
+    """
+    if rank_filters is not None:
+        for key in rank_filters.keys():
+            df = df[df[key].isin(rank_filters[key])]
+    return df["ref"].tolist()

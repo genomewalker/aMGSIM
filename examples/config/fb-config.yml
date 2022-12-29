@@ -22,3 +22,6 @@ max-genomes-damaged-selection: "most_abundant"
 max-genomes-damaged: 10
 # Number of cpus. [Default: 1]
 cpus: 16
+# Which ranks we would like to keep
+rank-filter-conditions:
+  { "superkingdom": ["d__Bacteria", "d__Archaea", "d__Viruses"] }

@@ -376,6 +376,25 @@ def get_open_func(filename):
         return open
 
 
+def load_ranks(rank_filter):
+    """A function that loads the rank filter.
+
+    Args:
+        rank_filter (str): A string with the rank filter.
+
+    Raises:
+        SchemaError: If the filter is not correct
+
+    Returns:
+        dict: A dictionary with the filter conditions.
+    """
+    # check if it is a dictionary
+    if isinstance(rank_filter, dict) or rank_filter is None:
+        return dict(rank_filter)
+    else:
+        raise SchemaError()
+
+
 def check_filter_conditions(filt_dict, default_filter_values, filters):
     """A function that checks if a filter condition is valid.
 

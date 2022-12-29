@@ -14,6 +14,7 @@ from aMGSIM.library import filterBAM_functions as w
 from aMGSIM import __version__
 import taxopy as txp
 from aMGSIM.library import cli as c
+import json
 
 
 def exceptionHandler(
@@ -240,6 +241,25 @@ def estimate(args):
         acc2taxid=config["acc2taxid"],
         nprocs=config["cpus"],
     )
+    # Convert dictionary to dataframe
+    taxonomy_info_df = pd.DataFrame.from_dict(taxonomy_info, orient="index")
+    rank_filters = config["rank-filter-conditions"]
+    if rank_filters:
+        log.info("Filtering taxonomic ranks...")
+
+        # check all keys in rank_filters are valid
+        for key in rank_filters.keys():
+            if key not in tax_ranks:
+                log.error(
+                    f"Invalid rank filter key: {key}. Valid keys are: {tax_ranks}"
+                )
+                sys.exit(1)
+
+        taxonomy_ranks = w.filter_taxonomy_ranks(
+            df=taxonomy_info_df, rank_filters=rank_filters
+        )
+        taxonomy_info = {r: taxonomy_info[r] for r in taxonomy_ranks}
+
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
 

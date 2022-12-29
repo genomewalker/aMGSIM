@@ -244,6 +244,14 @@ w_schema_config = {
         lambda x: x in tax_ranks,
         error=f"Invalid taxonomic ranks. Pick one valid from {', '.join(str(x) for x in tax_ranks)}",
     ),
+    Optional("rank-filter-conditions", default=None,): And(
+        Use(
+            lambda x: f.load_ranks(
+                x,
+            )
+        ),
+        error="There's a problem with the rank filter. Please check that is a dictionary",
+    ),
     Optional("max-genomes-nondamaged", default=10): Or(
         None,
         And(Use(int), lambda max_genomes_nondamaged: max_genomes_nondamaged >= 0),
@@ -581,3 +589,15 @@ fb_filters = [
     "tax_abund_tad",
     "n_reads_tad",
 ]
+
+valid_ranks = {
+    "domain": "d__",
+    "kingdom": "k__",
+    "lineage": "l__",
+    "phylum": "p__",
+    "class": "c__",
+    "order": "o__",
+    "family": "f__",
+    "genus": "g__",
+    "species": "s__",
+}
