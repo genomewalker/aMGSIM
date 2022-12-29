@@ -952,7 +952,7 @@ def get_ancient_genomes(args):
         )
 
     # If there's not abundace table lets recalcultae them using the selected genomes
-    if not "Perc_rel_abund" in list(df.columns):
+    if "Perc_rel_abund" not in list(df.columns):
         log.info("Calculating abundace table...")
         selected_genomes["Perc_rel_abund"] = 100 * (
             selected_genomes["seq_depth"]
