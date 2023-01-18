@@ -20,25 +20,45 @@ def get_codon_table():
     return codons_table
 
 
-def get_headers(records, pattern):
+def get_headers(records):
     """
     Get information of the reads encoded in the headers
     """
+    pattern = re.compile("(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)")
+    pattern0 = re.compile(
+        "(\S+)___(\S+)____(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)"
+    )
     for i, record in records:
+        m0 = re.match(pattern0, record.id)
         m1 = re.match(pattern, record.id)
-        reads = {
-            "Chromosome": m1.group(2),
-            "Start": int(m1.group(6)),
-            "End": m1.group(7),
-            "Name": m1.group(0),
-            "Strand": m1.group(5),
-            "Start_read": int(m1.group(6)),
-            "End_read": int(m1.group(7)),
-            "Strand_read": m1.group(5),
-            "type": m1.group(4),
-            "read_length": m1.group(8),
-            "damage": m1.group(9),
-        }
+        if m0:
+            reads = {
+                "Chromosome": f"{m0.group(2)}---{m0.group(3)}",
+                "Start": int(m0.group(7)),
+                "End": m0.group(8),
+                "Name": m0.group(0),
+                "Strand": m0.group(6),
+                "Start_read": int(m0.group(7)),
+                "End_read": int(m0.group(8)),
+                "Strand_read": m0.group(6),
+                "type": m0.group(5),
+                "read_length": m0.group(9),
+                "damage": m0.group(10),
+            }
+        else:
+            reads = {
+                "Chromosome": m1.group(2),
+                "Start": int(m1.group(6)),
+                "End": m1.group(7),
+                "Name": m1.group(0),
+                "Strand": m1.group(5),
+                "Start_read": int(m1.group(6)),
+                "End_read": int(m1.group(7)),
+                "Strand_read": m1.group(5),
+                "type": m1.group(4),
+                "read_length": m1.group(8),
+                "damage": m1.group(9),
+            }
         yield reads
 
 
@@ -401,13 +421,9 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
         encoding = guess_type(deam_file)[1]  # uses file extension
         _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
 
-        pattern = re.compile(
-            "(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)"
-        )
-
         with _open(deam_file) as f:
             records = enumerate(SeqIO.parse(f, "fasta"))
-            recs = get_headers(records=records, pattern=pattern)
+            recs = get_headers(records=records)
             df = pd.DataFrame(recs)
         if debug:
             log.info("Reading reads...")
@@ -415,7 +431,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
         # Get reads
         df_reads = pr.PyRanges(df)
         print(genome)
-        print(df_reads.df["Name"])
+        print(df_reads.df["Chromosome"])
         exit()
 
         if df_reads.df["Chromosome"].str.contains(genome).any():
