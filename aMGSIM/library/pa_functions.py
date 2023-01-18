@@ -26,6 +26,7 @@ def get_headers(records, pattern):
     """
     for i, record in records:
         m1 = re.match(pattern, record.id)
+        print(m1)
         reads = {
             "Chromosome": m1.group(2),
             "Start": int(m1.group(6)),
@@ -404,6 +405,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
         pattern = re.compile(
             "(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)"
         )
+
         with _open(deam_file) as f:
             records = enumerate(SeqIO.parse(f, "fasta"))
             recs = get_headers(records=records, pattern=pattern)
