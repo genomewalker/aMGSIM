@@ -415,7 +415,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
         # Get reads
         df_reads = pr.PyRanges(df)
         print(genome)
-        print(df_reads.df["Chromosome"])
+        print(df_reads.df["name"])
         exit()
 
         if df_reads.df["Chromosome"].str.contains(genome).any():
