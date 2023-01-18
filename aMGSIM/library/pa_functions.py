@@ -39,7 +39,6 @@ def get_headers(records, pattern):
             "read_length": m1.group(8),
             "damage": m1.group(9),
         }
-        print(reads)
         yield reads
 
 
@@ -415,7 +414,8 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
 
         # Get reads
         df_reads = pr.PyRanges(df)
-
+        print(df_reads)
+        exit()
         if df_reads.df["Chromosome"].str.contains(genome).any():
             if debug:
                 log.info("Reading genes...")
