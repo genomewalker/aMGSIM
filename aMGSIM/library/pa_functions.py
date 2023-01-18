@@ -26,8 +26,6 @@ def get_headers(records, pattern):
     """
     for i, record in records:
         m1 = re.match(pattern, record.id)
-        print(m1)
-        exit()
         reads = {
             "Chromosome": m1.group(2),
             "Start": int(m1.group(6)),
