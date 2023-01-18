@@ -33,7 +33,7 @@ def get_headers(records):
         m1 = re.match(pattern, record.id)
         if m0:
             reads = {
-                "Chromosome": f"{m0.group(2)}---{m0.group(3)}",
+                "Chromosome": f"{m0.group(2)}----{m0.group(3)}",
                 "Start": int(m0.group(7)),
                 "End": m0.group(8),
                 "Name": m0.group(0),
