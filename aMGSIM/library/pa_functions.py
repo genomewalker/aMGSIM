@@ -93,8 +93,7 @@ def get_gene_coordinates(fna):
     Get gene coordinates from the genes
     """
     df_nt = fasta_to_dataframe(fna)
-    print(df_nt)
-    exit()
+
     # df_aa = fasta_to_dataframe(faa)
     # df_genes = df_nt.merge(df_aa, on=["name", "description", "type"])
     df_nt[["Start", "End", "Strand"]] = df_nt.description.parallel_apply(
@@ -104,6 +103,10 @@ def get_gene_coordinates(fna):
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("-1", "-")
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("1", "+")
     df_nt["Chromosome"] = df_nt["name"].str.extract(r"(\S+)_\d+")
+    print(df_nt["name"])
+    print(df_nt["Chromosome"])
+
+    exit()
     df_nt.drop(columns=["description", "sequence"])
     df_nt = df_nt[["name", "type", "Chromosome", "Start", "End", "Strand"]]
     df_nt = df_nt.rename(columns={"name": "gene_name"})
