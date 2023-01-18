@@ -414,13 +414,13 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
 
         # Get reads
         df_reads = pr.PyRanges(df)
-        print(df_reads)
-        exit()
+
         if df_reads.df["Chromosome"].str.contains(genome).any():
             if debug:
                 log.info("Reading genes...")
             # Get genes info
             genes = get_gene_coordinates(fna=fna)
+            print(genes)
             # Get intersections
             # Will rop intersects that are too short for coding AAs
             if debug:
@@ -429,6 +429,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
             r2g_intersections = get_intersections(
                 reads=df_reads, genes=genes, genome=fasta_file, min_len=min_len
             )
+            print(r2g_intersections)
             names = {
                 "Start_b": "Start_gene",
                 "End_b": "End_gene",
@@ -437,12 +438,14 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
             r2g_intersections = r2g_intersections.join(
                 genes.drop("type"), report_overlap=True
             )
+            print(r2g_intersections)
             r2g_intersections = pr.PyRanges(
                 r2g_intersections.df[
                     r2g_intersections.df["Overlap"]
                     == r2g_intersections.df["intersect_length"]
                 ].rename(columns=names)
             )
+            print(r2g_intersections)
             r2g_intersections_df = r2g_intersections.df
             gn = r2g_intersections_df["Name"]
             read_multi_span = r2g_intersections_df[
