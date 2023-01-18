@@ -439,7 +439,6 @@ def generate_fragments(
     seq_depth = exp_data["n_reads"]
     files_modern = {}
     files_ancient = {}
-
     # Case when onlyAncient is False
     # Here we will need to run for modern and ancient
     if x["onlyAncient"] is False:
@@ -460,14 +459,22 @@ def generate_fragments(
                 debug=debug,
             )
             # Run deamSim
-            mis_file = get_misincorporation_file(
-                misincorporation_file=deamSim_params["-mapdamage"],
-                out_file=frag_data["deamSim_mis_ofile"],
-                accession=x["accession"],
-            )
+
+            parms = process_params_deamSim(deamSim_params)
+            if "-mapdamage" in parms.keys():
+                mis_file = get_misincorporation_file(
+                    misincorporation_file=deamSim_params["-mapdamage"],
+                    out_file=frag_data["deamSim_mis_ofile"],
+                    accession=x["accession"],
+                )
+                parms = deamSim_params.copy()
+                parms["-mapdamage"] = mis_file
+            else:
+                parms = deamSim_params.copy()
+
             run_deamSim(
                 exe=deamSim_exe,
-                params=deamSim_params,
+                params=parms,
                 ofile=frag_data["deamSim_ofile"],
                 fasta=frag_data["fragSim_ofile"],
                 libprep=libprep,
@@ -730,6 +737,7 @@ def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
                     p0 = re.compile(
                         "(\S+)---(\S+)----(\S+)___art-(ancient|modern).\d.fq"
                     )
+                    p0a = re.compile("(\S+)---(\S+)___art-(ancient|modern).\d.fq")
                     p1 = re.compile(
                         "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$"
                     )
@@ -737,18 +745,28 @@ def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
                     p0 = re.compile(
                         "(\S+)---(\S+)----(\S+)___art-(ancient|modern).SR.fq"
                     )
+                    p0a = re.compile("(\S+)---(\S+)___art-(ancient|modern).SR.fq")
                     p1 = re.compile(
                         "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d$"
                     )
             elif fastx == "fasta":
-                p0 = re.compile("(\S+)---(\S+)----(\S+)___\S+-(\S+).fasta\S+")
+                p0 = re.compile(
+                    "(\S+)---(\S+)----(\S+)___\S+-(ancient|modern).fasta\S+"
+                )
+                p0a = re.compile("(\S+)---(\S+)___\S+-(ancient|modern).fasta\S+")
                 p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
 
             m0 = re.match(p0, os.path.split(in_file)[1])
-            comm = m0.group(1)
-            taxon = f"{m0.group(2)}----{m0.group(3)}"
+            if m0 is None:
+                m0 = re.match(p0a, os.path.split(in_file)[1])
+                comm = m0.group(1)
+                taxon = f"{m0.group(2)}"
+                frag_type = m0.group(3)
+            else:
+                comm = m0.group(1)
+                taxon = f"{m0.group(2)}----{m0.group(3)}"
+                frag_type = m0.group(4)
 
-            frag_type = m0.group(4)
             encoding = guess_type(in_file)[1]  # uses file extension
             _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
             with _open(in_file) as f:
@@ -1086,7 +1104,7 @@ def get_ancient_reads(args):
     for comm in df["comm"].unique():
         comm = str(comm)
         read_files[comm] = {}
-        for index, val in df_files.iteritems():
+        for index, val in df_files.items():
             if comm == str(index[0]):
                 read_files[comm][index[1]] = val
 

@@ -285,7 +285,7 @@ class Genome:
             if seq_depth_modern > 0:
                 self.fragments_modern["seq_depth"] = seq_depth_modern
                 self.fragments_modern["fold"] = fold_modern
-                self.fragments_modern["fold_original"] = coverage_modern
+                self.fragments_modern["fold_original"] = None
 
             else:
                 self.fragments_modern = None

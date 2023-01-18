@@ -122,6 +122,6 @@ read_files = {}
 d = df.groupby(["comm", "file_type"])[["pair", "file"]].apply(lambda x: dict(x.values))
 for comm in df["comm"].unique():
     read_files[str(comm)] = {}
-    for index, val in d.iteritems():
+    for index, val in d.items():
         if str(comm) == str(index[0]):
             read_files[str(comm)][str(index[1])] = val
