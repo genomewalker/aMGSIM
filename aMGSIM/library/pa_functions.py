@@ -11,6 +11,8 @@ from functools import partial
 from pathlib import Path
 from pandarallel import pandarallel
 
+log = logging.getLogger("my_logger")
+
 
 def get_codon_table():
     codons_table = Bio.Data.CodonTable.standard_dna_table.forward_table
@@ -132,8 +134,6 @@ def get_intersections(reads, genes, genome, min_len=0):
     gr.intersect_length = gr.lengths()
     # print(j.df[j.df['intersect_length'].astype(int) != j.df['length'].astype(int)])
     gr = pr.PyRanges(gr.df.drop(columns=["Strand"]))
-    print(gr)
-    print(genome[0])
     # TODO Optimize retrieval of fasta sequences
     gr.intersect_seq = pr.get_fasta(gr, genome[0])
     gr.intersect_seq = gr.df.parallel_apply(revcomp, var="intersect_seq", axis=1)
