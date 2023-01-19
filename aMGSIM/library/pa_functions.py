@@ -109,8 +109,6 @@ def get_gene_coordinates(fna):
     df_nt = df_nt[["name", "type", "Chromosome", "Start", "End", "Strand"]]
     df_nt = df_nt.rename(columns={"name": "gene_name"})
     df_nt = pr.PyRanges(df_nt)
-    print(df_nt)
-    exit()
     return df_nt
 
 
