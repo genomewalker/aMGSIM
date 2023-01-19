@@ -78,9 +78,15 @@ def fasta_to_dataframe(
     infile, header_sep=None, key="name", seqkey="sequence", feature="CDS"
 ):
     """Get fasta proteins into dataframe"""
-    recs = SeqIO.parse(infile, "fasta")
+    encoding = guess_type(infile)[1]  # uses file extension
+    _open = partial(gzip.open, mode="rt") if encoding == "gzip" else open
+    # recs = SeqIO.parse(infile, "fasta")
     keys = [key, seqkey, "description"]
-    data = [(r.name, str(r.seq), str(r.description)) for r in recs]
+    data = []
+    with _open(infile, "r") as handle:
+        for r in SeqIO.parse(handle, "fasta"):
+            data.append((r.name, str(r.seq), str(r.description)))
+
     df = pd.DataFrame(data, columns=(keys))
     df["type"] = feature
     # fix bad names
