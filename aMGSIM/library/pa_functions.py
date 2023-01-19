@@ -102,9 +102,9 @@ def get_gene_coordinates(fna):
     # df_genes = df_genes.rename(columns={"sequence_x": "nt_seq", "sequence_y": "aa_seq"})
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("-1", "-")
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("1", "+")
-    df_nt["Chromosome"] = df_nt["name"].str.extract(r"(\S.+)_\d.+$")
-    df_nt["Chromosome"] = df_nt["name"].astype(str).str.replace("___", "---")
-    df_nt["Chromosome"] = df_nt["name"].astype(str).str.replace("---_", "----")
+    df_nt["Chromosome"] = df_nt["name"].str.extract(r"(.*)_\d+")
+    df_nt["Chromosome"] = df_nt["Chromosome"].astype(str).str.replace("___", "---")
+    df_nt["Chromosome"] = df_nt["Chromosome"].astype(str).str.replace("---_", "----")
     df_nt.drop(columns=["description", "sequence"])
     df_nt = df_nt[["name", "type", "Chromosome", "Start", "End", "Strand"]]
     df_nt = df_nt.rename(columns={"name": "gene_name"})
