@@ -141,6 +141,7 @@ log = logging.getLogger("my_logger")
 
 
 def do_proteins_analysis(args):
+    global debug
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
@@ -152,13 +153,12 @@ def do_proteins_analysis(args):
         debug = True
     else:
         debug = False
-
     logging.getLogger("my_logger").setLevel(
         logging.DEBUG if args.debug else logging.INFO
     )
 
     sys.excepthook = exceptionHandler
-
+    log.debug("Starting protein-analysis")
     nproc = args.processes
     ncpu = args.threads
     min_len = args.gene_min_length
