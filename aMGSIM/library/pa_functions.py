@@ -127,10 +127,7 @@ def get_intersections(reads, genes, genome, min_len=0):
     Returns the intersection positions and the sequence contained in the intersection
     """
     # j = df_genes.join(df_reads, report_overlap=True)
-    print(reads)
-    print(genes)
     gr = reads.intersect(genes, strandedness=False, how="first")
-    print(gr)
     # j = df_reads.overlap(df_genes, invert=True)
     gr.intersect_length = gr.lengths()
     # print(j.df[j.df['intersect_length'].astype(int) != j.df['length'].astype(int)])
