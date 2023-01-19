@@ -103,14 +103,14 @@ def get_gene_coordinates(fna):
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("-1", "-")
     df_nt["Strand"] = df_nt["Strand"].astype(str).str.replace("1", "+")
     df_nt["Chromosome"] = df_nt["name"].str.extract(r"(\S+)_\d+")
-    print(df_nt["name"])
-    print(df_nt["Chromosome"])
+    df_nt["Chromosome"] = df_nt["name"].astype(str).str.replace("____", "----")
 
-    exit()
     df_nt.drop(columns=["description", "sequence"])
     df_nt = df_nt[["name", "type", "Chromosome", "Start", "End", "Strand"]]
     df_nt = df_nt.rename(columns={"name": "gene_name"})
     df_nt = pr.PyRanges(df_nt)
+    print(df_nt)
+    exit()
     return df_nt
 
 
