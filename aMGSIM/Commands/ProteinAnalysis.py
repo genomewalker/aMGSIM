@@ -141,7 +141,13 @@ log = logging.getLogger("my_logger")
 
 
 def do_proteins_analysis(args):
-    global debug
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+    )
+    # simulating reads
     if args.debug:
         debug = True
     else:
