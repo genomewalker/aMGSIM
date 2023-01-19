@@ -460,7 +460,7 @@ def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
                 "Strand": "Strand_gene",
             }
             r2g_intersections = r2g_intersections.join(
-                genes.drop("type"), report_overlap=True
+                genes.drop("type"), report_overlap=True, apply_strand_suffix=False
             )
             r2g_intersections = pr.PyRanges(
                 r2g_intersections.df[
