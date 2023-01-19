@@ -60,6 +60,7 @@ def _rename_name(x, output_dir):
 
     pattern = re.compile(r"(\S+)----(\S+)")
 
+    ambig_chars = re.compile(r"[RYSWKMBVDH]")
     m0 = re.search(pattern, taxon)
     if m0 is None:
         # regexes
@@ -68,7 +69,6 @@ def _rename_name(x, output_dir):
         re2 = re.compile(r"^_*(.*?)_*$")
         re3 = re.compile(r"_*complete_genome")
         re4 = re.compile(r"(.{78}).+")
-        ambig_chars = re.compile(r"[RYSWKMBVDH]")
         taxon = re0.sub("", taxon)
         taxon = re1.sub("_", taxon)
         taxon = re2.sub(r"\1", taxon)
