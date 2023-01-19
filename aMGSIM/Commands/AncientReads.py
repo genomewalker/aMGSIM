@@ -58,18 +58,22 @@ def _rename_name(x, output_dir):
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir, exist_ok=True)
 
-    # regexes
-    re0 = re.compile(r".+ complete genome. ")
-    re1 = re.compile(r"\W")
-    re2 = re.compile(r"^_*(.*?)_*$")
-    re3 = re.compile(r"_*complete_genome")
-    re4 = re.compile(r"(.{78}).+")
-    ambig_chars = re.compile(r"[RYSWKMBVDH]")
-    taxon = re0.sub("", taxon)
-    taxon = re1.sub("_", taxon)
-    taxon = re2.sub(r"\1", taxon)
-    taxon = re3.sub("", taxon)
-    taxon = re4.sub(r"\1", taxon)
+    pattern = re.compile(r"(\S+)----(\S+)")
+
+    m0 = re.search(pattern, taxon)
+    if m0 is None:
+        # regexes
+        re0 = re.compile(r".+ complete genome. ")
+        re1 = re.compile(r"\W")
+        re2 = re.compile(r"^_*(.*?)_*$")
+        re3 = re.compile(r"_*complete_genome")
+        re4 = re.compile(r"(.{78}).+")
+        ambig_chars = re.compile(r"[RYSWKMBVDH]")
+        taxon = re0.sub("", taxon)
+        taxon = re1.sub("_", taxon)
+        taxon = re2.sub(r"\1", taxon)
+        taxon = re3.sub("", taxon)
+        taxon = re4.sub(r"\1", taxon)
     # iterating through sequence
     ambig_cnt = 0
     encoding = guess_type(file)[1]  # uses file extension
@@ -78,12 +82,12 @@ def _rename_name(x, output_dir):
     with open(out_file, mode="w") as outFH:
         with _open(file) as f:
             for i, record in enumerate(SeqIO.parse(f, "fasta")):
-                name = record.name
-                name = re0.sub("", name)
-                name = re1.sub("_", name)
-                name = re2.sub(r"\1", name)
-                name = re3.sub("", name)
-                name = re4.sub(r"\1", name)
+                # name = record.name
+                # name = re0.sub("", name)
+                # name = re1.sub("_", name)
+                # name = re2.sub(r"\1", name)
+                # name = re3.sub("", name)
+                # name = re4.sub(r"\1", name)
                 name = f"{taxon}__seq-{i}"
                 # name = name.lstrip('>') + '__seq{}'.format(i)
                 record.id = name
