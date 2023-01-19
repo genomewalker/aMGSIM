@@ -83,7 +83,7 @@ def fasta_to_dataframe(
     # recs = SeqIO.parse(infile, "fasta")
     keys = [key, seqkey, "description"]
     data = []
-    with _open(infile, "r") as handle:
+    with _open(infile) as handle:
         for r in SeqIO.parse(handle, "fasta"):
             data.append((r.name, str(r.seq), str(r.description)))
 
