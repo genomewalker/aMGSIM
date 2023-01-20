@@ -412,8 +412,8 @@ def get_seqs_inframe(x):
 log = logging.getLogger("my_logger")
 
 
-def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, nproc):
-    pandarallel.initialize(nb_workers=nproc, progress_bar=False, verbose=False)
+def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, threads=1):
+    pandarallel.initialize(nb_workers=threads, progress_bar=False, verbose=False)
 
     comm = x[0]
     genome = x[1]

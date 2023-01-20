@@ -182,7 +182,7 @@ def do_proteins_analysis(args):
         min_len=min_len,
         outdir=tmp_damage,
         debug=debug,
-        nproc=ncpu,
+        threads=ncpu,
     )
 
     log.info("Finding damage in codons...")
