@@ -1,10 +1,8 @@
-from operator import ge
 from aMGSIM.library import cli as c
 import logging
 import pandas as pd
 import sys
 from pathlib import Path
-import natsort as ns
 
 
 def exceptionHandler(

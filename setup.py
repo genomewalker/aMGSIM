@@ -25,7 +25,6 @@ install_reqs = [
     "ujson>=5.1.0",
 ]
 
-## install main application
 desc = "Ancient metagenome simulation of multiple synthetic communities"
 setup(
     setup_requires=[

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-from docopt import docopt
 import sys
 import os
 import re
@@ -25,7 +22,6 @@ from Bio import SeqIO
 import itertools
 import gzip
 from mimetypes import guess_type
-from aMGSIM import __version__
 
 debug = False
 
@@ -112,7 +108,7 @@ def rename_genomes(genome_table, cpus, output_dir):
                 total=len(genomes),
                 leave=False,
                 ncols=100,
-                desc=f"Genomes processed",
+                desc="Genomes processed",
             )
         )
         p.close()
@@ -739,26 +735,26 @@ def _combine_reads(read_files, output_dir, output_file, fastx, remove_adapters):
             if fastx == "fastq":
                 if "SR" not in os.path.split(in_file)[1]:
                     p0 = re.compile(
-                        "(\S+)---(\S+)----(\S+)___art-(ancient|modern).\d.fq"
+                        r"(\S+)---(\S+)----(\S+)___art-(ancient|modern).\d.fq"
                     )
-                    p0a = re.compile("(\S+)---(\S+)___art-(ancient|modern).\d.fq")
+                    p0a = re.compile(r"(\S+)---(\S+)___art-(ancient|modern).\d.fq")
                     p1 = re.compile(
-                        "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$"
+                        r"(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d\/(\d)$"
                     )
                 else:
                     p0 = re.compile(
-                        "(\S+)---(\S+)----(\S+)___art-(ancient|modern).SR.fq"
+                        r"(\S+)---(\S+)----(\S+)___art-(ancient|modern).SR.fq"
                     )
-                    p0a = re.compile("(\S+)---(\S+)___art-(ancient|modern).SR.fq")
+                    p0a = re.compile(r"(\S+)---(\S+)___art-(ancient|modern).SR.fq")
                     p1 = re.compile(
-                        "(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d$"
+                        r"(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?\-\d$"
                     )
             elif fastx == "fasta":
                 p0 = re.compile(
-                    "(\S+)---(\S+)----(\S+)___\S+-(ancient|modern).fasta\S+"
+                    r"(\S+)---(\S+)----(\S+)___\S+-(ancient|modern).fasta\S+"
                 )
-                p0a = re.compile("(\S+)---(\S+)___\S+-(ancient|modern).fasta\S+")
-                p1 = re.compile("(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
+                p0a = re.compile(r"(\S+)---(\S+)___\S+-(ancient|modern).fasta\S+")
+                p1 = re.compile(r"(\S+):([+\-]):(\d+):(\d+):(\d+)(?:_DEAM:(.*))?")
 
             m0 = re.match(p0, os.path.split(in_file)[1])
             if m0 is None:
@@ -1056,7 +1052,7 @@ def get_ancient_reads(args):
                 total=len(ancient_genomes_data),
                 leave=False,
                 ncols=100,
-                desc=f"Genomes processed",
+                desc="Genomes processed",
             )
         )
         p.close()
@@ -1092,7 +1088,7 @@ def get_ancient_reads(args):
                 total=len(comm_files),
                 leave=False,
                 ncols=100,
-                desc=f"Files processed",
+                desc="Files processed",
             )
         )
         p.close()

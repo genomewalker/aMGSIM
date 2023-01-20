@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.log import info
-from statistics import mode
-from docopt import docopt
+
 import logging
 import pandas as pd
 from functools import partial
@@ -11,8 +9,7 @@ import numpy as np
 import json
 from pathlib import Path
 import sys
-import math
-from scipy.stats import lognorm
+
 
 # application
 from MGSIM import SimReads
@@ -21,7 +18,6 @@ from aMGSIM.library import functions as f
 import datetime
 import tqdm
 from collections import OrderedDict
-from aMGSIM import __version__
 
 debug = False
 
@@ -184,7 +180,7 @@ class Genome:
         #     self.onlyAncient = bool(self.onlyAncient)
         # else:
         #     self.onlyAncient = None
-        if self.onlyAncient == True:
+        if self.onlyAncient is True:
             self.onlyAncient = True
             self.fragments_ancient = self.random_fragments(
                 min_len=min_len,
@@ -943,8 +939,8 @@ def get_ancient_genomes(args):
         )
 
     if read_length_freqs:
-        log.info(f"Generating random fragment lengths from JSON file")
-        log.info(f"::: Using empirical read lengths")
+        log.info("Generating random fragment lengths from JSON file")
+        log.info("::: Using empirical read lengths")
     else:
         log.info(f"Generating random fragment lengths from {dist} distribution")
         log.info(
@@ -991,7 +987,7 @@ def get_ancient_genomes(args):
                 total=len(genomes),
                 leave=False,
                 ncols=100,
-                desc=f"Genomes processed",
+                desc="Genomes processed",
             )
         )
         p.close()

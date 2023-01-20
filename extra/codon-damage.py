@@ -113,8 +113,6 @@ codons_damage_df.to_csv(
     sep="\t",
     index=False,
 )
-#%%
-import pandas as pd
 
 df = pd.read_csv("/tmp/text.tsv", sep="\t")
 read_files = {}

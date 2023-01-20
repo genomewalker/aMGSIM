@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
 # import
-## batteries
 import sys
 import logging
-import time
 
-## 3rd party
 from docopt import docopt
 
 # import Utils
-## application
 from MGSIM.Commands import Communities
 
 from aMGSIM.Commands.Estimate import estimate
@@ -19,7 +15,6 @@ from aMGSIM.Commands.AncientReads import get_ancient_reads
 from aMGSIM.Commands.ProteinAnalysis import do_proteins_analysis
 from aMGSIM.Commands.MultiCov import generate_multi_cov
 
-from aMGSIM import __version__
 from aMGSIM.library.cli import get_arguments
 
 

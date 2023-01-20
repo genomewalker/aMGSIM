@@ -1,5 +1,4 @@
 import logging
-from tkinter import N
 import pandas as pd
 from itertools import takewhile
 import numpy as np
@@ -12,6 +11,7 @@ from aMGSIM.library import cli as c
 import sys
 
 log = logging.getLogger("my_logger")
+
 
 # From https://stackoverflow.com/a/59737793/15704171
 def largestRemainderMethod(pd_series, decimals=1):
@@ -269,7 +269,7 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
                 total=len(refids),
                 leave=False,
                 ncols=100,
-                desc=f"References processed",
+                desc="References processed",
             )
         )
         p.close()
@@ -288,7 +288,7 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
 
 def check_if_genomes_left(df):
     if df.shape[0] == 0:
-        log.error(f"::: No damaged genomes found. Exiting.")
+        log.error("::: No damaged genomes found. Exiting.")
         sys.exit(1)
 
 
@@ -303,7 +303,7 @@ def get_missing_genomes(df, stats_df, n_taxa, n_taxa_first, tax_rank):
     log.info(
         f"::: We tried to get {n_taxa:,} genomes at {tax_rank} level but only found {n_taxa_first:,}."
     )
-    log.info(f"::: Resampling the genome table.")
+    log.info("::: Resampling the genome table.")
     # we will sample the table with genomes to get as closer as we can
     # while mainting a diverse set of genomes
     # get an initial set of genomes as big as we can
@@ -340,7 +340,7 @@ def select_taxa(
     """
     n_taxa_first = 0
     if mode == "most_abundant":
-        log.info(f"::: Selecting most abundant taxa")
+        log.info("::: Selecting most abundant taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)
@@ -378,7 +378,7 @@ def select_taxa(
             )
 
     elif mode == "least_abundant":
-        log.info(f"::: Selecting least abundant taxa")
+        log.info("::: Selecting least abundant taxa")
         if is_damaged:
             df = df[df["is_damaged"] == True]
             check_if_genomes_left(df)

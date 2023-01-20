@@ -26,9 +26,9 @@ def get_headers(records):
     """
     Get information of the reads encoded in the headers
     """
-    pattern = re.compile("(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)")
+    pattern = re.compile(r"(\S+)___(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)")
     pattern0 = re.compile(
-        "(\S+)___(\S+)____(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)"
+        r"(\S+)___(\S+)____(\S+)---(\d+):(\S+):([+\-]):(\d+):(\d+):(\d+):(.*)"
     )
     for i, record in records:
         m0 = re.match(pattern0, record.id)
@@ -69,7 +69,7 @@ def get_prodigal_coords(x):
     Get prodigal coordinates from headers
     """
     # get coords from prodigal fasta header
-    s = re.split("\#|\s", x.replace(" ", ""))
+    s = re.split(r"\#|\s", x.replace(" ", ""))
     coords = [int(i) for i in s[1:4]]
     return pd.Series(coords)
 

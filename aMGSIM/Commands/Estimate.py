@@ -11,10 +11,8 @@ import re
 from aMGSIM.library import defaults as d
 from aMGSIM.library import functions as f
 from aMGSIM.library import filterBAM_functions as w
-from aMGSIM import __version__
 import taxopy as txp
 from aMGSIM.library import cli as c
-import json
 
 
 def exceptionHandler(
@@ -405,7 +403,7 @@ def estimate(args):
         genome_paths=genome_paths,
     )
 
-    log.info(f"Writing results")
+    log.info("Writing results")
     out_files = create_output_files(prefix=config["sample-name"])
     community_file.to_csv(out_files["communities"], sep="\t", index=False)
     genome_paths_file.to_csv(out_files["paths"], sep="\t", index=False)

@@ -19,7 +19,6 @@ from aMGSIM.library import functions as f
 import tqdm
 import os
 import json
-from aMGSIM import __version__
 
 # Codon functions
 
@@ -202,7 +201,7 @@ def do_proteins_analysis(args):
                 total=len(comm_files),
                 leave=False,
                 ncols=100,
-                desc=f"Files processed",
+                desc="Files processed",
             )
         )
     log.info("Combining files...")
@@ -222,7 +221,7 @@ def do_proteins_analysis(args):
                 total=len(comms),
                 leave=False,
                 ncols=100,
-                desc=f"Files processed",
+                desc="Files processed",
             )
         )
     # for comm in comms:

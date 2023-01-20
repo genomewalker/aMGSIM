@@ -1,6 +1,6 @@
 import numpy as np
 import ruamel.yaml
-from collections import OrderedDict, ChainMap
+from collections import OrderedDict
 from distutils.spawn import find_executable
 from functools import partial, reduce
 from itertools import chain
@@ -12,9 +12,7 @@ from mimetypes import guess_type
 from Bio import SeqIO
 import pandas as pd
 from multiprocessing import Pool
-import gzip
 import shutil
-import json
 import ujson
 
 
@@ -122,7 +120,7 @@ def check_config_key_file(key, params, default, var_type, schema, debug):
 
 
 def check_exec(self):
-    if find_executable(self) == None:
+    if find_executable(self) is None:
         raise IOError("Cannot find executable: {}".format(self))
 
 
@@ -302,7 +300,7 @@ def load_genome_table(in_file, nproc=1):
     nproc = int(nproc)
     df = pd.read_csv(in_file, sep="\t")
 
-    ## check headers
+    # check headers
     diff = set(["Taxon", "Fasta"]) - set(df.columns.values)
     if len(diff) > 0:
         diff = ",".join(diff)
