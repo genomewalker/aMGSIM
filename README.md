@@ -49,6 +49,7 @@ aMGSIM incorporates three new subcommands to generate synthetic metagenomic read
 - **ancient-genomes**: Estimate coverage, depth and other properties for each genome in each synthetic community
 - **ancient-reads**: Simulate ancient reads for each taxon in each synthetic community
 - **protein-analysis**: Tracking damage to the codon positions of each simulated read. 
+- **add-duplicates**: Add duplicates to the fastq files using the models from Rochette et al. 2022
 
 You can access the list of commands by:
 
@@ -59,14 +60,18 @@ usage: aMGSIM [-h] [--version] {communities,estimate,multicov,ancient-genomes,an
 A simple tool to simulate ancient metagenomes for multiple synthetic communities
 
 positional arguments:
-  {communities,estimate,multicov,ancient-genomes,ancient-reads,protein-analysis}
+  {communities,estimate,multicov,ancient-genomes,ancient-reads,protein-analysis,add-duplicates}
                         positional arguments
-    communities         This will call the MGSIM communities command to generate random taxon abundances
-    estimate            Estimate coverage, depth and other properties for each genome in a sample processed with bam-filter
+    communities         This will call the MGSIM communities command to generate random taxon
+                        abundances
+    estimate            Estimate coverage, depth and other properties for each genome in a sample
+                        processed with bam-filter
     multicov            Create different coverage versions of a genome compositions file
-    ancient-genomes     Estimate coverage, depth and other properties for each genome in each synthetic community
+    ancient-genomes     Estimate coverage, depth and other properties for each genome in each
+                        synthetic community
     ancient-reads       Simulate ancient reads for each taxon in each synthetic community
     protein-analysis    Tracking damage to the codon positions of each simulated read
+    add-duplicates      Add duplicates to the fastq files using the models from Rochette et al. 2022
 
 optional arguments:
   -h, --help            show this help message and exit
