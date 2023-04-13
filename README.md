@@ -484,7 +484,7 @@ Here, `protein-analysis` will start 3 jobs and use 16 cores per each job, and wi
 
 
 ### Add duplicates
-This subcommand will add duplicates to the simulated reads. The number of duplicates is based on the models described in [Rochelle et al. 2022](https://doi.org/10.1101/2022.10.10.511638). It takes as an input one of the fastQ files produced by the `ancient-reads` subcommand and a TSV table giving the number of duplication clones of each size that were observed. For generating the input check the decoratio package [here](https://bitbucket.org/rochette/decoratio/src/master/). The subcommand uses the modules from decoratio to generate the duplicates. The output is a fastQ file with the duplicates added.
+This subcommand will add duplicates to the simulated reads. The number of duplicates is based on the models described in [Rochelle et al. 2022](https://doi.org/10.1101/2022.10.10.511638). It takes as an input one of the fastQ files produced by the `ancient-reads` subcommand (or any fastQ) and a TSV table giving the number of duplication clones of each size that were observed. For generating the input check the decoratio package [here](https://bitbucket.org/rochette/decoratio/src/master/). The subcommand uses the modules from decoratio to generate the duplicates. The output is a fastQ file with the duplicates added.
 
 ```
 usage: aMGSIM add-duplicates [-h] [--debug] -f FASTQ [-c CLONE_SIZE_FREQS] [--quiet] [-t THREADS]
