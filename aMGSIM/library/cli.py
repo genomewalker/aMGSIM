@@ -21,7 +21,7 @@ class SplitArgs(argparse.Action):
 
 
 def is_debug():
-    return logging.getLogger("my_logger").getEffectiveLevel() == logging.DEBUG
+    return logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG
 
 
 filters = ["breadth", "depth", "depth_evenness", "breadth_expected_ratio"]
@@ -189,7 +189,8 @@ help_msg = {
     "version": f"Print program version",
 }
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
+logging.getLogger(name="matplotlib").setLevel(logging.WARNING)
 
 
 def get_arguments(argv=None):
@@ -250,6 +251,13 @@ def get_arguments(argv=None):
     parser_pa = sub_parsers.add_parser(
         "protein-analysis",
         help="Tracking damage to the codon positions of each simulated read",
+        parents=[parent_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser_ad = sub_parsers.add_parser(
+        "add-duplicates",
+        help="Add duplicates to the fastq files using the models from Rochette et al. 2022",
         parents=[parent_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -353,6 +361,70 @@ def get_arguments(argv=None):
         default=defaults["gene_min_length"],
         dest="gene_min_length",
         help=help_msg["gene_min_length"],
+    )
+
+    ad_required_args = parser_ad.add_argument_group("required arguments")
+    ad_optional_args = parser_ad.add_argument_group("optional arguments")
+
+    ad_required_args.add_argument(
+        "-f",
+        "--fastq",
+        type=str,
+        required=True,
+        help="First input file in FASTQ format",
+    )
+    ad_optional_args.add_argument(
+        "-c",
+        "--clone-size-freqs",
+        dest="clone_size_freqs",
+        type=str,
+        help="File name for clone size frequencies. Headers are 'clone_size\tn_reads' (default: None)",
+    )
+    ad_optional_args.add_argument(
+        "--quiet",
+        dest="quiet",
+        action="store_true",
+        help="Suppress progress bar",
+    )
+    ad_optional_args.add_argument(
+        "-t",
+        "--threads",
+        type=int,
+        default=1,
+        help="Number of threads to use for parallel processing",
+    )
+    ad_optional_args.add_argument(
+        "-o",
+        "--tsv-out",
+        type=str,
+        dest="tsv_out",
+        default="output.tsv.gz",
+        help="Output file name (default: output.tsv.gz)",
+    )
+    ad_optional_args.add_argument(
+        "-q",
+        "--fastq-out",
+        type=str,
+        dest="fastq_out",
+        default="output.tsv.gz",
+        help="Output file name (default: output.fq.gz)",
+    )
+    p = parser_ad.add_argument_group("Decoratio arguments")
+
+    p.add_argument(
+        "--model",
+        type=str,
+        default="logskewnormal",
+        help='An amplification model specifier such as "logskewnormal" (default), '
+        '"lognormal", or "inheff:12". See MODEL SPECIFICATION section.',
+    )
+    p.add_argument("--ratio-min", type=float, default=0.02, help=argparse.SUPPRESS)
+    p.add_argument("--ratio-max", type=float, help=argparse.SUPPRESS)
+    p.add_argument("--inheff-n-efficiency-bins", type=int, help=argparse.SUPPRESS)
+    p.add_argument("--inheff-n-sims-per-bin", type=int, help=argparse.SUPPRESS)
+    p.add_argument("--inheff-legacy-sims", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument(
+        "--inheff-uncouple-beta-parameters", action="store_true", help=argparse.SUPPRESS
     )
 
     args = parser.parse_args(None if sys.argv[1:] else ["-h"])

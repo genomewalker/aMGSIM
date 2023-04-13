@@ -377,7 +377,7 @@ It takes as input the file with the [genome information](examples/data/genome_li
 - **art**: One can specify custom error models in case they are not included in [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm)
 
 
-The ouput of `ancient-reads` are the read files for each community after each step (fragSim -> deamSim -> adptSim -> ART) and a JSON file with the location of each file. This JSON file can be used for the last subcommand in aMGSIM, `protein-analysis`.
+The ouput of `ancient-reads` are the read files for each community after each step (fragSim -> deamSim -> adptSim -> ART) and a JSON file with the location of each file. This JSON file can be used for the subcommand in aMGSIM, `protein-analysis`.
 
 ### protein-analysis
 
@@ -482,6 +482,45 @@ Here, `protein-analysis` will start 3 jobs and use 16 cores per each job, and wi
 - **community**: 1
   - Community where it belongs
 
+
+### Add duplicates
+This subcommand will add duplicates to the simulated reads. The number of duplicates is based on the models described in [Rochelle et al. 2022](https://doi.org/10.1101/2022.10.10.511638). It takes as an input one of the fastQ files produced by the `ancient-reads` subcommand and a TSV table giving the number of duplication clones of each size that were observed. For generating the input check the decoratio package [here](https://bitbucket.org/rochette/decoratio/src/master/). The subcommand uses the modules from decoratio to generate the duplicates. The output is a fastQ file with the duplicates added.
+
+```
+usage: aMGSIM add-duplicates [-h] [--debug] -f FASTQ [-c CLONE_SIZE_FREQS] [--quiet] [-t THREADS]
+                             [-o TSV_OUT] [-q FASTQ_OUT] [--model MODEL]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --debug               Print debug messages (default: False)
+
+required arguments:
+  -f FASTQ, --fastq FASTQ
+                        First input file in FASTQ format (default: None)
+
+optional arguments:
+  -c CLONE_SIZE_FREQS, --clone-size-freqs CLONE_SIZE_FREQS
+                        File name for clone size frequencies. Headers are 'clone_size n_reads'
+                        (default: None) (default: None)
+  --quiet               Suppress progress bar (default: False)
+  -t THREADS, --threads THREADS
+                        Number of threads to use for parallel processing (default: 1)
+  -o TSV_OUT, --tsv-out TSV_OUT
+                        Output file name (default: output.tsv.gz) (default: output.tsv.gz)
+  -q FASTQ_OUT, --fastq-out FASTQ_OUT
+                        Output file name (default: output.fq.gz) (default: output.tsv.gz)
+
+Decoratio arguments:
+  --model MODEL         An amplification model specifier such as "logskewnormal" (default),
+                        "lognormal", or "inheff:12". See MODEL SPECIFICATION section. (default:
+                        logskewnormal)
+```
+
+One can run the subcommand like this:
+
+```
+aMGSIM add-duplicates --threads 3 --fastq example_ancient_reads.fastq.gz --clone-size-freqs example_duplication_table.tsv
+```
 
 ## LICENSE
 See [LICENSE](./LICENSE)

@@ -10,7 +10,7 @@ from aMGSIM.library import functions as f
 from aMGSIM.library import cli as c
 import sys
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
 
 
 # From https://stackoverflow.com/a/59737793/15704171
@@ -254,7 +254,7 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
     acc2taxid_dict = acc2taxid_df.set_index("reference").T.to_dict("records")
 
     debug = c.is_debug()
-    logging.getLogger("my_logger").setLevel(logging.DEBUG if debug else logging.INFO)
+    logging.getLogger(__name__).setLevel(logging.DEBUG if debug else logging.INFO)
 
     parms = {"taxdb": taxdb, "acc2taxid": acc2taxid_dict[0]}
     func = partial(get_tax, parms=parms)

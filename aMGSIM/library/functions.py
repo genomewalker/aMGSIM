@@ -14,6 +14,7 @@ import pandas as pd
 from multiprocessing import Pool
 import shutil
 import ujson
+import logging
 
 
 def str2dict(s):
@@ -340,6 +341,10 @@ def _genome_size(x):
 def load_read_length_freqs(file):
     file = ujson.load(file)
     return reduce(lambda d, src: d.update(src) or d, fast_flatten(file), {})
+
+
+def is_debug():
+    return logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG
 
 
 def get_compression_type(filename):
