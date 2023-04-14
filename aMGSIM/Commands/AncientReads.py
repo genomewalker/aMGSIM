@@ -41,7 +41,7 @@ def exceptionHandler(
         log.error("Please use --debug to see full traceback.")
 
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
 
 
 def _rename_name(x, output_dir):
@@ -945,7 +945,7 @@ def combine_fastx_files(
 
 def get_ancient_reads(args):
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.DEBUG if args.debug else logging.INFO,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         force=True,
@@ -955,10 +955,6 @@ def get_ancient_reads(args):
         debug = True
     else:
         debug = False
-
-    logging.getLogger("my_logger").setLevel(
-        logging.DEBUG if args.debug else logging.INFO
-    )
 
     # sys.excepthook = exceptionHandler
 

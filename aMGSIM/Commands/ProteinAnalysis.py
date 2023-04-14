@@ -64,13 +64,6 @@ def exceptionHandler(
         print("\n*** Error: Please use --debug to see full traceback.")
 
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(levelname)s ::: %(asctime)s ::: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
-
 def combine_files(x, tmp_damage, out_dir):
     out_suffix = ".tsv.gz"
     fname = f"{x}_aa-damage{out_suffix}"
@@ -98,13 +91,13 @@ def obj_dict(obj):
 
 # Read files and get coordinates
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
 
 
 def do_proteins_analysis(args):
     global debug
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.DEBUG if args.debug else logging.INFO,
         format="%(levelname)s ::: %(asctime)s ::: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         force=True,
@@ -114,9 +107,6 @@ def do_proteins_analysis(args):
         debug = True
     else:
         debug = False
-    logging.getLogger("my_logger").setLevel(
-        logging.DEBUG if args.debug else logging.INFO
-    )
 
     sys.excepthook = exceptionHandler
     log.debug("Starting protein-analysis")

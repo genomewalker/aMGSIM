@@ -23,6 +23,7 @@ install_reqs = [
     "pandarallel>=1.5.2",
     "taxopy>=0.9.2",
     "ujson>=5.1.0",
+    "decoratio>=1.0.5",
 ]
 
 desc = "Ancient metagenome simulation of multiple synthetic communities"

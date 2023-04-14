@@ -196,25 +196,22 @@ def create_output_files(prefix):
     return out_files
 
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
 
 
 def estimate(args):
     logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-    )
+            level=logging.DEBUG if args.debug else logging.INFO,
+            format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            force=True,
+        )
     # simulating reads
     if args.debug:
         debug = True
     else:
         debug = False
 
-    logging.getLogger("my_logger").setLevel(
-        logging.DEBUG if args.debug else logging.INFO
-    )
 
     sys.excepthook = exceptionHandler
     # simulating reads

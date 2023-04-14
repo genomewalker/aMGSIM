@@ -11,7 +11,7 @@ from functools import partial
 from pathlib import Path
 from pandarallel import pandarallel
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
 
 
 def get_codon_table():
@@ -409,7 +409,7 @@ def get_seqs_inframe(x):
     return x
 
 
-log = logging.getLogger("my_logger")
+log = logging.getLogger(__name__)
 
 
 def analyze_proteins(x, files, gene_predictions, min_len, outdir, debug, threads=1):
