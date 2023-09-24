@@ -274,8 +274,6 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
         p.close()
         p.join()
     taxonomy_info = list(filter(None, taxonomy_info))
-    print(taxonomy_info)
-    exit()
     exclude = ["taxid", "ref"]
     tax_ranks = []
 
