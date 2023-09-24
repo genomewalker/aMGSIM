@@ -32,7 +32,6 @@ def exceptionHandler(
 
 
 def generate_genome_compositions(df, sample_name):
-
     """Function to generate a genome composition file compatible with aMGSIM.
 
     Args:
@@ -201,17 +200,16 @@ log = logging.getLogger(__name__)
 
 def estimate(args):
     logging.basicConfig(
-            level=logging.DEBUG if args.debug else logging.INFO,
-            format="%(levelname)s ::: %(asctime)s ::: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            force=True,
-        )
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(levelname)s ::: %(asctime)s ::: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+    )
     # simulating reads
     if args.debug:
         debug = True
     else:
         debug = False
-
 
     sys.excepthook = exceptionHandler
     # simulating reads
@@ -238,6 +236,7 @@ def estimate(args):
     )
     # Convert dictionary to dataframe
     taxonomy_info_df = pd.DataFrame.from_dict(taxonomy_info, orient="index")
+
     rank_filters = config["rank-filter-conditions"]
     if rank_filters:
         log.info("Filtering taxonomic ranks...")
@@ -254,7 +253,6 @@ def estimate(args):
             df=taxonomy_info_df, rank_filters=rank_filters
         )
         taxonomy_info = {r: taxonomy_info[r] for r in taxonomy_ranks}
-
     # get list of keys for taxonomy
     taxonomy_keys = list(taxonomy_info.keys())
 
