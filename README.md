@@ -505,7 +505,7 @@ required arguments:
 
 optional arguments:
   -c CLONE_SIZE_FREQS, --clone-size-freqs CLONE_SIZE_FREQS
-                        File name for clone size frequencies. Headers are 'clone_size n_reads'
+                        File name for clone size frequencies. Headers are 'clone_size n_clones'
                         (default: None) (default: None)
   --quiet               Suppress progress bar (default: False)
   -t THREADS, --threads THREADS

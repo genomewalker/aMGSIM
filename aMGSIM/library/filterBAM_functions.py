@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 
 # From https://stackoverflow.com/a/59737793/15704171
 def largestRemainderMethod(pd_series, decimals=1):
-
     floor_series = ((10**decimals * pd_series).astype(np.int)).apply(np.floor)
     diff = 100 * (10**decimals) - floor_series.sum().astype(np.int)
     series_decimals = pd_series - floor_series / (10**decimals)
@@ -275,6 +274,8 @@ def get_taxonomy_info(refids, taxdb, acc2taxid, nprocs=1):
         p.close()
         p.join()
     taxonomy_info = list(filter(None, taxonomy_info))
+    print(taxonomy_info)
+    exit()
     exclude = ["taxid", "ref"]
     tax_ranks = []
 

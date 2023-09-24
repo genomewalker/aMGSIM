@@ -378,7 +378,7 @@ def get_arguments(argv=None):
         "--clone-size-freqs",
         dest="clone_size_freqs",
         type=str,
-        help="File name for clone size frequencies. Headers are 'clone_size\tn_reads' (default: None)",
+        help="File name for clone size frequencies. Headers are 'clone_size\tn_clones' (default: None)",
     )
     ad_optional_args.add_argument(
         "--quiet",
