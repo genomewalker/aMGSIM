@@ -402,6 +402,13 @@ def get_arguments(argv=None):
         help="Output file name (default: output.tsv.gz)",
     )
     ad_optional_args.add_argument(
+        "--tsv-filt-out",
+        type=str,
+        dest="tsv_filt_out",
+        default="output-filt.tsv.gz",
+        help="Filtered utput file name (default: output-filt.tsv.gz)",
+    )
+    ad_optional_args.add_argument(
         "-q",
         "--fastq-out",
         type=str,

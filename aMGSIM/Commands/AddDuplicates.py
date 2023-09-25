@@ -362,8 +362,8 @@ def add_duplicates(args):
     )
     df_filt = df[(df["n_clones_dup_aprox"] > 0) & (df["clone_size"] > 0)]
     # we keep the one with n_clones_dup > 0
-    df.to_csv("test.tsv", sep="\t", index=False)
-    df_filt.to_csv("test1.tsv", sep="\t", index=False)
+    df.to_csv("args.tsv_out", sep="\t", index=False)
+    df_filt.to_csv("args.tsv_filt_out", sep="\t", index=False)
 
     seq_dict_done = []
 
@@ -424,7 +424,7 @@ def add_duplicates(args):
     )
 
     # write to fastq file
-    with gzip.GzipFile("test.fq.gz", mode="wb", compresslevel=6) as gz_file:
+    with gzip.GzipFile(args.fastq_out, mode="wb", compresslevel=6) as gz_file:
         with io.BufferedWriter(gz_file, buffer_size=100 * (2**20)) as buffer:
             for record_id, seq, qual, strand in tqdm(
                 zip(
