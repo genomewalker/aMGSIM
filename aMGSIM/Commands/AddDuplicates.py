@@ -362,8 +362,8 @@ def add_duplicates(args):
     )
     df_filt = df[(df["n_clones_dup_aprox"] > 0) & (df["clone_size"] > 0)]
     # we keep the one with n_clones_dup > 0
-    df.to_csv("args.tsv_out", sep="\t", index=False)
-    df_filt.to_csv("args.tsv_filt_out", sep="\t", index=False)
+    df.to_csv(args.tsv_out, sep="\t", index=False)
+    df_filt.to_csv(args.tsv_filt_out, sep="\t", index=False)
 
     seq_dict_done = []
 
