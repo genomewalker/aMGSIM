@@ -76,7 +76,10 @@ def ordered_load(stream, Loader=ruamel.yaml.Loader, object_pairs_hook=OrderedDic
     OrderedLoader.add_constructor(
         ruamel.yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping
     )
-    return ruamel.yaml.load(stream, OrderedLoader)
+
+    yaml = ruamel.yaml.YAML(typ='rt')
+    yaml.Loader = OrderedLoader  # Set the custom Loader
+    return yaml.load(stream)
 
 
 def check_correct_class(key, var_type):

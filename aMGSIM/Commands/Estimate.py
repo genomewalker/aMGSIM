@@ -262,9 +262,15 @@ def estimate(args):
     filterBAM_stats["taxid"] = filterBAM_stats["reference"].apply(
         lambda x: taxonomy_info[x]["taxid"]
     )
+    # find which keys don't have the taxonomic rank, then remove them from filterBAM_stats
+
+
     filterBAM_stats["taxrank"] = filterBAM_stats["reference"].apply(
-        lambda x: taxonomy_info[x][taxonomic_rank]
+        # check if taxonomic rank is in the dictionary if not return None
+        lambda x: taxonomy_info[x].get(taxonomic_rank, None)
     )
+
+    filterBAM_stats = filterBAM_stats[filterBAM_stats["taxrank"].notnull()]
 
     filterBAM_stats = w.filter_filterBAM_taxa(
         df=filterBAM_stats,
@@ -346,12 +352,14 @@ def estimate(args):
     genomes["proportion_new"] = 100 * (
         genomes["tax_abund_read"] / genomes["tax_abund_read"].sum()
     )
-
     genomes["Taxon"] = genomes["reference"].apply(
         lambda x: re.sub(
-            "[^0-9a-zA-Z]+", "_", re.sub("s__", "", taxonomy_info[x]["species"])
+            "[^0-9a-zA-Z]+", "_", re.sub("s__", "", taxonomy_info[x].get("species", "Unknown"))
         )
     )
+    # remove where taxon is s__Unknown
+    genomes = genomes[genomes["Taxon"] != "Unknown"]
+    
     genomes["Taxon"] = genomes[["Taxon", "reference"]].apply(
         lambda row: "----".join(row.values.astype(str)), axis=1
     )
@@ -371,7 +379,6 @@ def estimate(args):
     genome_compositions["reference"] = genome_compositions["Taxon"].str.split(
         "----", expand=True
     )[1]
-
     if "damage" in mdmg_results.columns:
         genome_compositions = genome_compositions.merge(
             mdmg_results[["reference", "damage"]], on="reference"
@@ -379,14 +386,13 @@ def estimate(args):
         # drop reference column
     else:
         # rename column Bayesian_D_max to D_max
-        genome_compositions.rename(columns={"MAP_damage": "damage"}, inplace=True)
-        genome_compositions.rename(
-            columns={"MAP_significance": "significance"}, inplace=True
-        )
-
         genome_compositions = genome_compositions.merge(
-            mdmg_results[["reference", "damage"]], on="reference"
+            mdmg_results[["reference", "MAP_damage"]], on="reference"
         )
+        genome_compositions.rename(columns={"MAP_damage": "damage"}, inplace=True)
+        # genome_compositions.rename(
+        #     columns={"MAP_significance": "significance"}, inplace=True
+        # )
 
     genome_compositions.drop(columns=["reference"], inplace=True)
 
